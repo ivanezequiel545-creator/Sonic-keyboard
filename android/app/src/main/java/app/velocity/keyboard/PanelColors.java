@@ -13,10 +13,11 @@ final class PanelColors {
   PanelColors(Context context){
     int theme=KeyboardPreferences.themeIndex(context);
     int base=KeyboardPreferences.color(context,"backgroundColor",KeyboardPreferences.COLORS[theme]);
-    surface=ColorUtils.blendARGB(base,0xffffffff,ColorUtils.calculateLuminance(base)<.4?.09f:.78f);
-    ink=foreground(surface);int secondary=ColorUtils.blendARGB(ink,surface,.24f);muted=ColorUtils.calculateContrast(secondary,surface)>=4.5?secondary:ink;
+    // Float blending can round an opaque alpha down to 254 on Android.
+    surface=ColorUtils.setAlphaComponent(ColorUtils.blendARGB(base,0xffffffff,ColorUtils.calculateLuminance(base)<.4?.09f:.78f),255);
+    ink=foreground(surface);int secondary=ColorUtils.setAlphaComponent(ColorUtils.blendARGB(ink,surface,.24f),255);muted=ColorUtils.calculateContrast(secondary,surface)>=4.5?secondary:ink;
     accent=KeyboardPreferences.color(context,"accentColor",KeyboardPreferences.ACCENTS[theme]);
-    tile=ColorUtils.blendARGB(surface,accent,.13f);
+    tile=ColorUtils.setAlphaComponent(ColorUtils.blendARGB(surface,accent,.13f),255);
   }
   static int foreground(int background){return ColorUtils.calculateLuminance(background)>.179?0xff000000:0xffffffff;}
   void chip(TextView view,boolean selected){

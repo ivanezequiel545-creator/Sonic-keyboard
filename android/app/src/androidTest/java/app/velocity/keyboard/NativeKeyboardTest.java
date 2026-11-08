@@ -306,6 +306,7 @@ public class NativeKeyboardTest {
       @Override public java.io.File getFilesDir(){return new java.io.File(target.getCacheDir(),"media-test-files");}
       @Override public java.io.File getCacheDir(){return new java.io.File(target.getCacheDir(),"media-test-cache");}
     };
+    PanelColors palette=new PanelColors(target);assertEquals(255,android.graphics.Color.alpha(palette.surface));assertTrue(androidx.core.graphics.ColorUtils.calculateContrast(palette.ink,palette.surface)>=4.5);
     MediaRepository.clearImports(isolated);
     java.util.List<MediaRepository.Item> initial=MediaRepository.list(isolated);assertEquals(10,initial.size());
     try{
