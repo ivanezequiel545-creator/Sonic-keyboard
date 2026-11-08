@@ -42,7 +42,7 @@ public class RemoteMediaTest {
     if(view instanceof android.view.ViewGroup){android.view.ViewGroup group=(android.view.ViewGroup)view;for(int i=0;i<group.getChildCount();i++){MediaPanel found=mediaPanel(group.getChildAt(i));if(found!=null)return found;}}
     return null;
   }
-  @Test public void finishingInputClosesMediaEvenWhileTheViewIsAttached(){
+  @Test public void finishingInputClosesMediaWithoutADetachNotification(){
     Context target=InstrumentationRegistry.getInstrumentation().getTargetContext();
     boolean incognito=KeyboardPreferences.flag(target,"incognito");KeyboardPreferences.get(target).edit().putBoolean("incognito",false).commit();
     try{InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{
