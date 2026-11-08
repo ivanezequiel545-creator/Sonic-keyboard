@@ -10,6 +10,8 @@ En la app abre **Personalizar**; en Android puedes usar también **Activar mi te
 
 **Publicación:** la APK de verificación es debug. La release estable requiere firma persistente protegida y revisión física; [procedimiento y lista de validación](docs/stable-release.md), [notas 1.0.0](docs/releases/1.0.0.md). Los enlaces de descarga conservan las alpha publicadas hasta completar la publicación real. No se ha sustituido un enlace por una APK inexistente.
 
+**Verificación automática completada:** [CI correcto y APK 1.0.0 de prueba](docs/verification-1.0.0.md). Incluye 11 pruebas Node, 15 de interfaz/offline y la instrumentación del IME en otra aplicación. La APK disponible sigue siendo de verificación, no una publicación estable.
+
 ### Compilar y probar 1.0.0
 
 ```sh
@@ -19,8 +21,8 @@ npm run android:sync
 npx playwright install chromium
 TEST_OFFLINE=1 CI=1 npm run test:e2e
 cd android
-./gradlew assembleDebug testDebugUnitTest lintDebug
-./gradlew connectedDebugAndroidTest # requiere dispositivo/emulador
+./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+./gradlew :app:connectedDebugAndroidTest # requiere dispositivo/emulador
 ```
 
 El catálogo se regenera antes de cada build desde `emojibase-data@17.0.0` (MIT, licencia incluida); no descarga datos durante el uso. `npm run emoji:build` permite regenerarlo separadamente. En esta versión se usa una sola variante Android; las tres variantes de la siguiente sección pertenecen a las etiquetas históricas.
@@ -102,9 +104,11 @@ Cada versión adjunta un SHA-256: `sha256sum -c velocity-android.apk.sha256`. So
 
 El servicio **no guarda, registra ni transmite pulsaciones**. Solo guarda preferencias. La app mantiene permiso de internet para sus herramientas web; el IME no usa la red. No se solicita acceso a contactos, micrófono o almacenamiento general. No hay autocorrección ni dictado nativo en estas versiones. La configuración nativa se puede editar por separado; el botón «Aplicar estos ajustes al teclado» copia expresamente tema, mano, sonido y vibración desde la interfaz web. No hay sincronización con una cuenta.
 
-### Compilar y publicar
+### Compilar y publicar las alpha históricas
 
-El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En cada push de esta rama compila tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
+Esta subsección describe las etiquetas `v1.1.0-alpha.*`, no el flujo actual 1.0.0. Para la versión actual utiliza los comandos del inicio y [el procedimiento estable](docs/stable-release.md).
+
+El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En aquellas etiquetas compilaba tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
 
 Tras verificar la ejecución, `workflow_dispatch` con `publish=true` publica los tres APK y checksums como prelanzamientos de GitHub del commit comprobado. No reescribe tags de versiones pertenecientes a otro commit. Si Actions está bloqueado por permisos, cuota o facturación, hay que resolverlo en GitHub antes de que aparezcan archivos descargables.
 
@@ -114,7 +118,7 @@ Para compilar localmente, instala Android Studio, SDK 35 y Java 21, y configura 
 npm ci
 npm run android:sync
 npm run android:open
-npm run android:apk       # genera las tres variantes debug
+npm run android:apk       # solo en las etiquetas alpha: genera tres variantes debug
 # APKs: android/app/build/outputs/apk/{webPreview,personalPreview,imePreview}/debug/
 cd android
 ./gradlew testImePreviewDebugUnitTest lintImePreviewDebug
