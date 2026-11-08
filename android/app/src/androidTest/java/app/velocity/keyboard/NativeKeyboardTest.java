@@ -325,6 +325,11 @@ public class NativeKeyboardTest {
     assertEquals(10,MediaRepository.list(isolated).size());
   }
 
+  private void restoreSecure(String key,String value)throws Exception{
+    if(value.equals("null"))shell("settings delete secure "+key);
+    else shell("settings put secure "+key+" '"+value.replace("'","'\\''")+"'");
+  }
+
   private void tapWithoutAccessibility(android.app.UiAutomation automation,android.graphics.Point point){
     long time=android.os.SystemClock.uptimeMillis();
     android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,point.x,point.y,0);
@@ -343,6 +348,7 @@ public class NativeKeyboardTest {
     String previous=shell("settings get secure default_input_method"),component="app.velocity.keyboard/.VelocityInputMethodService";
     String testPackage=instrumentation.getContext().getPackageName();
     boolean suggestions=KeyboardPreferences.flag(context,"suggestions"),incognito=KeyboardPreferences.flag(context,"incognito");
+    String accessibilityServices=shell("settings get secure enabled_accessibility_services"),accessibilityEnabled=shell("settings get secure accessibility_enabled");
     try{
       KeyboardPreferences.get(context).edit().putBoolean("suggestions",true).putBoolean("incognito",false).commit();
       shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
@@ -353,7 +359,13 @@ public class NativeKeyboardTest {
       for(int j=0;j<4;j++)points[j]=device.wait(Until.findObject(By.text(letters[j])),5000).getVisibleCenter();
       // Ordinary UiAutomator tests enable accessibility and masked this crash.
       // Retain the no-accessibility automation object: no UiDevice calls here.
+      // Fully disconnect the old accessibility-backed automation before
+      // creating the input-only connection. Switching flags in-place can leave
+      // the old service registered on API 31. Never skip the disabled assertion.
+      instrumentation.getUiAutomation().destroy();
       android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
+      shell("settings put secure enabled_accessibility_services ''");
+      shell("settings put secure accessibility_enabled 0");
       android.view.accessibility.AccessibilityManager manager=(android.view.accessibility.AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
       long deadline=android.os.SystemClock.uptimeMillis()+5000;
       while(manager.isEnabled()&&android.os.SystemClock.uptimeMillis()<deadline)android.os.SystemClock.sleep(50);
@@ -367,6 +379,8 @@ public class NativeKeyboardTest {
       assertTrue(device.wait(Until.hasObject(By.text("holahola").desc("external-probe-text")),5000));
       assertTrue(device.hasObject(By.text("q")));
     }finally{
+      restoreSecure("enabled_accessibility_services",accessibilityServices);
+      restoreSecure("accessibility_enabled",accessibilityEnabled);
       instrumentation.getUiAutomation(0);
       KeyboardPreferences.get(context).edit().putBoolean("suggestions",suggestions).putBoolean("incognito",incognito).commit();
       if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
