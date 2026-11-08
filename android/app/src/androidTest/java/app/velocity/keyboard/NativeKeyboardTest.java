@@ -331,7 +331,16 @@ public class NativeKeyboardTest {
       q.performClick();
       assertSame(q, findButton(view, "q"));
       assertEquals("qqQ", typed.toString());
-      view.finishEditor();
+      int originalPadding = KeyboardPreferences.number(context, "bottomPadding");
+      try {
+        KeyboardPreferences.get(context).edit().putInt("bottomPadding", 22).commit();
+        view.refresh();
+        assertEquals(Math.round(22 * context.getResources().getDisplayMetrics().density),
+          view.getPaddingBottom());
+      } finally {
+        KeyboardPreferences.get(context).edit().putInt("bottomPadding", originalPadding).commit();
+        view.finishEditor();
+      }
     });
   }
 }

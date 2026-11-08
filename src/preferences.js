@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
 });
 export const PRESETS = {
   comfortable: {
+    keyOpacity: 96,
     keyHeight: 56,
     keyGap: 3,
     keyRadius: 9,
@@ -31,6 +32,7 @@ export const PRESETS = {
     numberRow: true,
   },
   compact: {
+    keyOpacity: 96,
     keyHeight: 44,
     keyGap: 2,
     keyRadius: 5,
@@ -40,6 +42,7 @@ export const PRESETS = {
     numberRow: false,
   },
   accessible: {
+    keyOpacity: 100,
     keyHeight: 64,
     keyGap: 4,
     keyRadius: 10,

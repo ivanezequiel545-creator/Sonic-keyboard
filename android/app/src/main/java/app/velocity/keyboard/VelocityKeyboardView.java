@@ -37,7 +37,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   private final List<Button> letters = new ArrayList<>();
   private final List<ComfortKey> keys = new ArrayList<>();
   private boolean shifted, capsLock, symbols, emojis, numeric, sensitive, tools, searching;
-  private int symbolPage, theme, keyColor, ink, accent, background;
+  private int symbolPage, theme, keyColor, ink, accent, background, navigationBottom;
   private String actionLabel = "↵",
     emojiQuery = "";
   private long lastSpace;
@@ -52,21 +52,10 @@ public final class VelocityKeyboardView extends LinearLayout {
       IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
     );
     setOnApplyWindowInsetsListener((v, insets) -> {
-      setPadding(
-        dp(4),
-        dp(4),
-        dp(4),
-        dp(KeyboardPreferences.number(getContext(), "bottomPadding")) +
-          insets.getSystemWindowInsetBottom()
-      );
+      navigationBottom = insets.getSystemWindowInsetBottom();
+      applyBottomPadding();
       return insets;
     });
-    setPadding(
-      dp(4),
-      dp(4),
-      dp(4),
-      dp(KeyboardPreferences.number(context, "bottomPadding"))
-    );
     refresh();
   }
 
@@ -109,7 +98,13 @@ public final class VelocityKeyboardView extends LinearLayout {
     return sensitive || KeyboardPreferences.flag(getContext(), "incognito");
   }
 
+  private void applyBottomPadding() {
+    setPadding(dp(4), dp(4), dp(4),
+      dp(KeyboardPreferences.number(getContext(), "bottomPadding")) + navigationBottom);
+  }
+
   public void refresh() {
+    applyBottomPadding();
     for (ComfortKey key : keys) key.cancel();
     keys.clear();
     letters.clear();
