@@ -2,6 +2,45 @@
 
 Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
 
+## 1.0.1: letras centradas y barra de palabras
+
+Corrige la alineación observada en un teléfono real: letras, números, espacio y acciones quedan centrados horizontal y verticalmente, sin depender del tema del fabricante. La franja superior del IME ahora propone palabras en español **sin añadir altura**; las herramientas y el modo de una mano siguen en ⋯.
+
+Incluye 12.000 palabras por frecuencia para sugerencias locales, y corrección automática conservadora de errores comunes al pulsar espacio. Toca una sugerencia para completar; ⌫ inmediatamente después de una corrección automática restaura lo que habías escrito. Ajustes nativos permiten desactivar sugerencias y autocorrección por separado. No aprende ni guarda tus palabras ni usa servicios de Gboard. No es un corrector gramatical ni promete la precisión de Gboard. Se desactiva en campos protegidos y cuando el editor impide sugerencias; tampoco autocorrige búsquedas de filtro. La PWA comparte sugerencias por prefijo; el deshacer de autocorrección corresponde al IME Android.
+
+El vocabulario derivado de Hermit Dave/FrequencyWords/OpenSubtitles2018 conserva su **CC BY-SA 4.0**, independiente de la Unlicense del código. [Fuente, modificaciones y licencia](public/licenses/spanish-words.txt). Las dos distribuciones están versionadas; las compilaciones no descargan diccionarios ni datos de usuarios.
+
+**Revisión de la misma 1.0.1:** corrige el cierre al escribir sin accesibilidad activa y mejora el color/contraste del panel de emojis. Incluye pestañas GIFs/Stickers, 6 stickers propios y 4 GIF animados offline, envío a apps compatibles o compartir manteniendo pulsado, e importación privada de hasta 12 PNG/WebP/GIF desde ajustes nativos (4 MB por archivo). Los stickers se envían como imágenes, no como packs instalables de WhatsApp/Telegram. No hay buscador remoto ni envío de tus pulsaciones. La web descarga/comparte el pack y también lo precarga sin conexión.
+
+**[Descargar la APK 1.0.1 revisada y ver sus pruebas](docs/verification-1.0.1-revision.md).** CI correcto: 14 pruebas Node, 17 de navegador, unidades/lint y pruebas nativas en Android 10 más la regresión sin accesibilidad en Android 12. La [verificación inicial](docs/verification-1.0.1.md) se conserva como historial: su APK precede al cierre reportado y queda reemplazada por esta revisión.
+
+La APK de verificación es debug. La publicación de producción 1.0.1 sigue protegida por firma persistente y confirmación de prueba física; ver [el procedimiento](docs/stable-release.md) y [las notas 1.0.1](docs/releases/1.0.1.md).
+
+## 1.0.0: comodidad y personalización
+
+La base de esta actualización fue la implementación **1.0.0**; no confundir el número del código con una versión ya publicada. Añade teclas ajustables, perfiles de comodidad, fila numérica, foto privada, colores, cursor por espacio, borrado continuo y **3.979 entradas Unicode 17.0 en diez categorías**. El selector nativo usa celdas recicladas y carga fuera del hilo de UI; escribir letras no reconstruye el teclado.
+
+En la app abre **Personalizar**; en Android puedes usar también **Activar mi teclado → ajustes nativos**. El IME no guarda conversaciones ni lee automáticamente el portapapeles. Recientes/favoritos guardan únicamente IDs de emojis. Los recientes se suspenden en privado. La compatibilidad visual de emojis depende de la fuente del teléfono.
+
+**Publicación:** la APK de verificación es debug. La release estable requiere firma persistente protegida y revisión física; [procedimiento y lista de validación](docs/stable-release.md), [notas 1.0.0](docs/releases/1.0.0.md). Los enlaces de descarga conservan las alpha publicadas hasta completar la publicación real. No se ha sustituido un enlace por una APK inexistente.
+
+**Historial de verificación 1.0.0:** [CI correcto y APK 1.0.0 de prueba](docs/verification-1.0.0.md). Incluye 11 pruebas Node, 15 de interfaz/offline y la instrumentación del IME en otra aplicación. La APK disponible sigue siendo de verificación, no una publicación estable.
+
+### Compilar y probar la versión actual
+
+```sh
+npm ci
+npm test
+npm run android:sync
+npx playwright install chromium
+TEST_OFFLINE=1 CI=1 npm run test:e2e
+cd android
+./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+./gradlew :app:connectedDebugAndroidTest # requiere dispositivo/emulador
+```
+
+El catálogo se regenera antes de cada build desde `emojibase-data@17.0.0` (MIT, licencia incluida); no descarga datos durante el uso. `npm run emoji:build` permite regenerarlo separadamente. En esta versión se usa una sola variante Android; las tres variantes de la siguiente sección pertenecen a las etiquetas históricas.
+
 ## Qué incluye
 
 - Teclado interactivo español QWERTY con `ñ`, mayúsculas, números, símbolos, vocales acentuadas, borrado, espacio y salto de línea.
@@ -50,7 +89,7 @@ Publica el contenido de `dist/` en la raíz de un dominio con HTTPS. El manifest
 - El service worker precarga HTML, JavaScript (incluido el generador ZIP), CSS, fuente e iconos. Los enlaces y servicios externos no están disponibles sin internet.
 - En desarrollo no se registra un service worker, para evitar servir versiones antiguas del código.
 
-## Tres APK preliminares para Android
+## Historial: tres APK preliminares para Android
 
 | Versión                                                                                          | Variante Gradle   | Alcance                                                            |
 | ------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------ |
@@ -79,9 +118,11 @@ Cada versión adjunta un SHA-256: `sha256sum -c velocity-android.apk.sha256`. So
 
 El servicio **no guarda, registra ni transmite pulsaciones**. Solo guarda preferencias. La app mantiene permiso de internet para sus herramientas web; el IME no usa la red. No se solicita acceso a contactos, micrófono o almacenamiento general. No hay autocorrección ni dictado nativo en estas versiones. La configuración nativa se puede editar por separado; el botón «Aplicar estos ajustes al teclado» copia expresamente tema, mano, sonido y vibración desde la interfaz web. No hay sincronización con una cuenta.
 
-### Compilar y publicar
+### Compilar y publicar las alpha históricas
 
-El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En cada push de esta rama compila tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
+Esta subsección describe las etiquetas `v1.1.0-alpha.*`, no el flujo actual 1.0.0. Para la versión actual utiliza los comandos del inicio y [el procedimiento estable](docs/stable-release.md).
+
+El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En aquellas etiquetas compilaba tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
 
 Tras verificar la ejecución, `workflow_dispatch` con `publish=true` publica los tres APK y checksums como prelanzamientos de GitHub del commit comprobado. No reescribe tags de versiones pertenecientes a otro commit. Si Actions está bloqueado por permisos, cuota o facturación, hay que resolverlo en GitHub antes de que aparezcan archivos descargables.
 
@@ -91,7 +132,7 @@ Para compilar localmente, instala Android Studio, SDK 35 y Java 21, y configura 
 npm ci
 npm run android:sync
 npm run android:open
-npm run android:apk       # genera las tres variantes debug
+npm run android:apk       # solo en las etiquetas alpha: genera tres variantes debug
 # APKs: android/app/build/outputs/apk/{webPreview,personalPreview,imePreview}/debug/
 cd android
 ./gradlew testImePreviewDebugUnitTest lintImePreviewDebug
@@ -130,4 +171,4 @@ No hay servidor de traducción, telemetría ni llamadas automáticas a servicios
 
 El nombre del repositorio es histórico. **No se usan imágenes, personajes, logotipos, música ni recursos de Sonic o SEGA.** El fondo azul y las ilustraciones abstractas de rayos y órbitas son diseños propios; no se afirma que material de Sonic carezca de copyright.
 
-El código y los fondos propios se distribuyen con la [Unlicense](LICENSE), ya presente en el repositorio: dedicación al dominio público en la medida permitida por la legislación aplicable. Las dependencias mantienen sus licencias: React, Capacitor y Lucide (MIT/ISC según paquete), JSZip (MIT o GPL-3.0) e Inter (SIL OFL-1.1). Consulta los archivos de licencia de los paquetes instalados.
+El código y los fondos propios se distribuyen con la [Unlicense](LICENSE), ya presente en el repositorio: dedicación al dominio público en la medida permitida por la legislación aplicable. Los datos de frecuencia españoles conservan CC BY-SA 4.0, con atribución en `public/licenses/spanish-words.txt`. Las dependencias mantienen sus licencias: React, Capacitor y Lucide (MIT/ISC según paquete), JSZip (MIT o GPL-3.0) e Inter (SIL OFL-1.1). Consulta los archivos de licencia de los paquetes instalados.

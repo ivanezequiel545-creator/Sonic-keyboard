@@ -1,17 +1,21 @@
-name: Android · 3 prereleases
+name: Android · Velocity 1.0.1
 
 on:
   push:
-    branches: [arena/e155af27-sonic-keyboard]
+    branches: [arena/90b621fa-sonic-keyboard]
     paths-ignore: ["**.md"]
   workflow_dispatch:
     inputs:
+      device_verified:
+        description: He probado esta versión en un teléfono físico y confirmado la actualización
+        type: boolean
+        default: false
       diagnose_run:
         description: ID de una ejecución anterior para inspeccionar sus informes (no compila ni publica)
         type: string
         default: ""
       publish:
-        description: Publicar los tres APK como prelanzamientos después de las pruebas
+        description: Publicar 1.0.1 estable (requiere firma de producción y prueba física confirmada)
         type: boolean
         default: false
 
@@ -26,7 +30,11 @@ jobs:
   build:
     if: inputs.diagnose_run == ''
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 30
+    env:
+      VELOCITY_STORE_PASSWORD: ${{ secrets.VELOCITY_STORE_PASSWORD }}
+      VELOCITY_KEY_ALIAS: ${{ secrets.VELOCITY_KEY_ALIAS }}
+      VELOCITY_KEY_PASSWORD: ${{ secrets.VELOCITY_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -45,6 +53,26 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: velocity-android-debug-key-${{ runner.os }}-v1
+      - name: Validate stable publication requirements
+        if: inputs.publish
+        env:
+          SIGNING_KEY: ${{ secrets.VELOCITY_KEYSTORE_BASE64 }}
+          DEVICE_VERIFIED: ${{ inputs.device_verified }}
+        run: |
+          test "$DEVICE_VERIFIED" = true || { echo "::error::Confirma primero las pruebas en un teléfono físico."; exit 1; }
+          test -n "$SIGNING_KEY" && test -n "$VELOCITY_STORE_PASSWORD" && test -n "$VELOCITY_KEY_ALIAS" && test -n "$VELOCITY_KEY_PASSWORD" || { echo "::error::Falta una firma de producción persistente. No se publica una APK debug como estable."; exit 1; }
+      - name: Restore protected signing key if configured
+        id: signing
+        env:
+          SIGNING_KEY: ${{ secrets.VELOCITY_KEYSTORE_BASE64 }}
+        run: |
+          export VELOCITY_KEYSTORE_PATH="$RUNNER_TEMP/velocity.keystore"
+          echo "VELOCITY_KEYSTORE_PATH=$VELOCITY_KEYSTORE_PATH" >> "$GITHUB_ENV"
+          if test -n "$SIGNING_KEY"; then
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$VELOCITY_KEYSTORE_PATH"
+            chmod 600 "$VELOCITY_KEYSTORE_PATH"
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
       - run: npm ci
       - run: npm test
       - run: npm run android:sync
@@ -52,11 +80,12 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Web interface, release links and offline downloads
         run: TEST_OFFLINE=1 npm run test:e2e
-      - name: Compile all three APKs, native unit tests and IME lint
+      - name: Compile 1.0.1 verification APK, unit tests and lint
+        id: android_build
         working-directory: android
         run: |
           chmod +x gradlew
-          bash ../scripts/gradle-ci.sh assembleDebug testWebPreviewDebugUnitTest testPersonalPreviewDebugUnitTest testImePreviewDebugUnitTest lintImePreviewDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+          bash ../scripts/gradle-ci.sh :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
       - name: Free hosted runner disk for emulator userdata
         run: |
           # Emulator 37 checks the image's minimum userdata size even when a
@@ -69,7 +98,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Test Alpha 3 as an actual keyboard in a separate app
+      - name: Test native keyboard, emoji catalogue and gestures in another app
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
@@ -80,17 +109,37 @@ jobs:
           target: default
           disable-animations: true
           script: bash scripts/test-android-ci.sh
+      - name: Preserve Android 10 reports
+        run: |
+          mkdir -p android/app/build/reports/native-api29
+          cp -R android/app/build/outputs/androidTest-results/connected/. android/app/build/reports/native-api29/
+      - name: Regression - type and reopen without accessibility (Android 12)
+        if: ${{ !cancelled() && steps.android_build.outcome == 'success' }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: google_apis
+          disk-size: 2048M
+          ram-size: 2048M
+          emulator-boot-timeout: 180
+          arch: x86_64
+          disable-animations: true
+          script: bash scripts/test-android-ci.sh -Pandroid.testInstrumentationRunnerArguments.class=app.velocity.keyboard.NativeKeyboardTest#typingAndReopeningWorkWithoutAnAccessibilityService
+      - name: Build signed release when a protected key exists
+        if: steps.signing.outputs.ready == 'true'
+        working-directory: android
+        run: bash ../scripts/gradle-ci.sh :app:assembleRelease --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
       - name: Prepare APKs and checksums
         run: |
-          for entry in '1 webPreview' '2 personalPreview' '3 imePreview'; do
-            read -r stage flavor <<< "$entry"
-            mkdir -p "apk/alpha-$stage"
-            cp "android/app/build/outputs/apk/$flavor/debug/app-$flavor-debug.apk" "apk/alpha-$stage/velocity-android.apk"
-            (cd "apk/alpha-$stage" && sha256sum velocity-android.apk > velocity-android.apk.sha256)
-          done
+          mkdir -p apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.1-verification.apk
+          if test -f android/app/build/outputs/apk/release/app-release.apk; then
+            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.1.apk
+          fi
+          (cd apk && for file in *.apk; do sha256sum "$file" > "$file.sha256"; done)
       - uses: actions/upload-artifact@v4
         with:
-          name: velocity-three-android-previews
+          name: velocity-1.0.1-apk
           path: apk/
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -101,12 +150,17 @@ jobs:
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
           retention-days: 14
-      - name: Publish three GitHub prereleases
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+      - name: Publish signed stable 1.0.1
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && inputs.device_verified && steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: bash scripts/publish-previews.sh "$GITHUB_SHA"
+        run: |
+          test -s apk/velocity-1.0.1.apk
+          gh release create v1.0.1 --target "$GITHUB_SHA" --title 'Velocity 1.0.1' --notes-file docs/releases/1.0.1.md apk/velocity-1.0.1.apk apk/velocity-1.0.1.apk.sha256
+      - name: Remove private signing material
+        if: always()
+        run: rm -f "${VELOCITY_KEYSTORE_PATH:-$RUNNER_TEMP/velocity.keystore}"
 
   diagnostics:
     if: github.event_name == 'workflow_dispatch' && inputs.diagnose_run != ''
@@ -128,6 +182,13 @@ jobs:
           import xml.etree.ElementTree as ET
           for path in Path('reports').rglob('*'):
               if path.is_file(): print(path)
+              if path.suffix == '.xml' and 'TEST-' in path.name:
+                  root = ET.parse(path).getroot()
+                  for failure in root.iter('failure'):
+                      text = ET.tostring(failure, encoding='unicode')[:24000]
+                      for start in range(0,len(text),3300):
+                          message = text[start:start+3300].replace('%','%25').replace('\n','%0A').replace('\r','%0D')
+                          print('::error title=Native test failure ' + str(start) + '::' + message)
               if path.suffix == '.xml' and 'lint' in path.name:
                   root = ET.parse(path).getroot()
                   for issue in root.findall('issue'):
@@ -147,8 +208,12 @@ jobs:
           result = subprocess.run(['gh','run','view',os.environ['RUN_ID'],'--log'],capture_output=True,text=True)
           log = result.stdout + result.stderr
 
-          lines = [line for line in log.splitlines() if re.search(r'error|warning|panic|fatal|KVM|emulator |emulator-|Boot|boot|GPU|qemu',line,re.I)]
-          text = '\n'.join(line for line in lines if re.search(r'FATAL|PANIC|Exception|FAILED',line))[:3000] + '\n--- LOG TAIL ---\n' + log[-9000:]
+          lines = log.splitlines()
+          selected = []
+          for index,line in enumerate(lines):
+              if re.search(r'Expected|Received|Error:|java.lang|FAILED|Assertion|FATAL|PANIC',line):
+                  selected.extend(lines[max(0,index-3):index+6])
+          text = '\n'.join(dict.fromkeys(selected))[:24000] + '\n--- LOG TAIL ---\n' + log[-1500:]
           for start in range(0,len(text),3300):
               chunk=text[start:start+3300].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
               print('::notice title=Runner diagnostics ' + str(start) + '::' + chunk)

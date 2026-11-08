@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 30000,
-  reporter: "list",
+  reporter: process.env.CI ? [["list"], ["github"]] : "list",
   webServer: process.env.CI
     ? {
         command: "npm run preview -- --port 5173",
