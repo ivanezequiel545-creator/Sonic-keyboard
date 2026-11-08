@@ -35,7 +35,7 @@ public class InputProbeActivity extends Activity {
               }
               String mime=content.getDescription().getMimeType(0);
               boolean valid=count>=4&&((mime.equals("image/png")&&header[0]==(byte)137&&header[1]=='P')||(mime.equals("image/gif")&&header[0]=='G'&&header[1]=='I')||(mime.equals("image/webp")&&count>=12&&header[0]=='R'&&header[1]=='I'&&header[8]=='W'&&header[9]=='E'));
-              if(!valid)return false;
+              if(!valid||content.getLinkUri()!=null)return false;
               receiver.setText("recibido:"+mime);receiver.setSelection(receiver.length());return true;
             } catch(Exception e) {
               return false;

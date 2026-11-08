@@ -127,7 +127,7 @@ public final class VelocityInputMethodService
             }else{
               boolean legacy=android.os.Build.VERSION.SDK_INT<25;
               if(legacy)grantUriPermission(target.packageName,uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
-              androidx.core.view.inputmethod.InputContentInfoCompat content=new androidx.core.view.inputmethod.InputContentInfoCompat(uri,new android.content.ClipDescription(item.provider.isEmpty()?item.label:item.label+" · "+item.provider,new String[]{item.mime}),item.online()?android.net.Uri.parse(item.source):null);
+              androidx.core.view.inputmethod.InputContentInfoCompat content=new androidx.core.view.inputmethod.InputContentInfoCompat(uri,new android.content.ClipDescription(item.provider.isEmpty()?item.label:item.label+" · "+item.provider,new String[]{item.mime}),null);
               boolean sent=androidx.core.view.inputmethod.InputConnectionCompat.commitContent(connection,target,content,legacy?0:androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,null);
               if(!sent){if(legacy)revokeUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);android.widget.Toast.makeText(this,"La app rechazó la imagen. Mantén pulsado para compartir.",android.widget.Toast.LENGTH_LONG).show();}
             }
