@@ -275,7 +275,7 @@ public class NativeKeyboardTest {
 
   private UiObject2 waitForSuggestion(UiDevice device,String word) throws Exception {
     UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word)),10000);
-    if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"': "+tree.toString("UTF-8"));}
+    if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"'; "+VelocityInputMethodService.suggestionDiagnostics+": "+tree.toString("UTF-8"));}
     return result;
   }
 

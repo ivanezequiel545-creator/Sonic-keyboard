@@ -499,6 +499,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     button.setIncludeFontPadding(false);
     // OEM/service themes can default to TOP|START. Never inherit key alignment.
     button.setSingleLine(true);
+    button.setHorizontallyScrolling(false);
     button.setGravity(Gravity.CENTER);
     button.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
     int alpha =
@@ -572,7 +573,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     if(showCandidates){
       tool(bar,"⋯","Herramientas de edición",()->{tools=true;refresh();});
       LinearLayout candidates=new LinearLayout(getContext());candidates.setContentDescription("Sugerencias en español");bar.addView(candidates,new LayoutParams(0,-1,1));
-      for(int i=0;i<3;i++){final int index=i;Button button=new Button(getContext());button.setAllCaps(false);button.setTextSize(14);button.setTextColor(KeyboardPreferences.readable(background));button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(2),0,dp(2),0);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setGravity(Gravity.CENTER);button.setSingleLine(true);button.setEllipsize(android.text.TextUtils.TruncateAt.END);button.setFocusable(false);button.setOnClickListener(v->{if(index<candidateWords.size())listener.onSuggestion(candidateWords.get(index));});candidateButtons.add(button);candidates.addView(button,new LayoutParams(0,-1,1));}paintCandidates();
+      for(int i=0;i<3;i++){final int index=i;Button button=new Button(getContext());button.setAllCaps(false);button.setTextSize(14);button.setTextColor(KeyboardPreferences.readable(background));button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(2),0,dp(2),0);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setGravity(Gravity.CENTER);button.setSingleLine(true);button.setHorizontallyScrolling(false);button.setEllipsize(android.text.TextUtils.TruncateAt.END);button.setFocusable(false);button.setOnClickListener(v->{if(index<candidateWords.size())listener.onSuggestion(candidateWords.get(index));});candidateButtons.add(button);candidates.addView(button,new LayoutParams(0,-1,1));}paintCandidates();
     }else{
       TextView title=new TextView(getContext());title.setText(sensitive?"Velocity · campo privado":privateMode()?"Velocity · privado":"⚡ Velocity");title.setTextColor(KeyboardPreferences.readable(background));title.setTextSize(11);title.setPadding(dp(5),0,0,0);bar.addView(title,new LayoutParams(0,-2,1));
       tool(bar,"⋯","Herramientas de edición",()->{tools=!tools;emojis=searching=false;refresh();});

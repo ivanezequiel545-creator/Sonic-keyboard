@@ -16,10 +16,12 @@ public final class VelocityInputMethodService
 {
 
   private VelocityKeyboardView keyboard;
-  private EditorInfo editor;
+  private volatile EditorInfo editor;
   private boolean sensitive;
   private final android.os.Handler suggestionHandler=new android.os.Handler(android.os.Looper.getMainLooper());
-  private int suggestionGeneration,cursor=-1,undoCursor=-1;
+  private volatile int suggestionGeneration;
+  private int cursor=-1,undoCursor=-1;
+  static volatile String suggestionDiagnostics="not started"; // Test-only counts, never words or editor contents.
   private String candidateWord="",undoOriginal,undoReplacement;
   private java.util.List<String> lastCandidates=java.util.Collections.emptyList();
   private void clearUndo(){undoOriginal=null;undoReplacement=null;undoCursor=-1;}
@@ -32,19 +34,40 @@ public final class VelocityInputMethodService
   private boolean canAutoCorrect(){if(!canSuggest()||!KeyboardPreferences.flag(this,"autocorrect"))return false;int variation=editor.inputType&InputType.TYPE_MASK_VARIATION;return variation==InputType.TYPE_TEXT_VARIATION_NORMAL||variation==InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE||variation==InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE||variation==InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT;}
   private void stopSuggestions(){suggestionGeneration++;suggestionHandler.removeCallbacksAndMessages(null);candidateWord="";lastCandidates=java.util.Collections.emptyList();if(keyboard!=null)keyboard.updateCandidates(lastCandidates);}
   private void requestSuggestions(){
-    final int generation=++suggestionGeneration;suggestionHandler.removeCallbacksAndMessages(null);
-    if(!canSuggest()){candidateWord="";lastCandidates=java.util.Collections.emptyList();if(keyboard!=null)keyboard.updateCandidates(lastCandidates);return;}
+    final int generation=++suggestionGeneration;
+    suggestionHandler.removeCallbacksAndMessages(null);
+    candidateWord="";lastCandidates=java.util.Collections.emptyList();
+    if(!canSuggest()){if(keyboard!=null)keyboard.updateCandidates(lastCandidates);return;}
     suggestionHandler.postDelayed(()->{
-      InputConnection connection=getCurrentInputConnection();if(connection==null||!canSuggest())return;
-      CharSequence selected=connection.getSelectedText(0);CharSequence after=connection.getTextAfterCursor(1,0);
-      if((selected!=null&&selected.length()>0)||SpanishSuggestions.wordContinues(after)){candidateWord="";lastCandidates=java.util.Collections.emptyList();keyboard.updateCandidates(lastCandidates);return;}
-      final String word=SpanishSuggestions.currentWord(connection.getTextBeforeCursor(80,0));
-      // Clear stale clickable candidates before the background index query.
-      candidateWord="";lastCandidates=java.util.Collections.emptyList();keyboard.updateCandidates(lastCandidates);
-      EmojiRepository.IO.execute(()->{try{java.util.List<String> result=SpanishDictionary.get(this).suggest(word);suggestionHandler.post(()->{if(generation!=suggestionGeneration||!canSuggest()||keyboard==null)return;candidateWord=word;lastCandidates=result;keyboard.updateCandidates(result);});}catch(java.io.IOException ignored){/* Typing still works if the local data cannot be opened. */}});
+      final InputConnection connection=getCurrentInputConnection();
+      if(connection==null||!canSuggest()||generation!=suggestionGeneration)return;
+      // IPC reads must not block the IME UI thread. Keep the previous labels
+      // visible while querying; lastCandidates is already invalidated above.
+      EmojiRepository.IO.execute(()->{
+        if(generation!=suggestionGeneration||!canSuggest())return;
+        CharSequence selected=connection.getSelectedText(0);
+        CharSequence after=connection.getTextAfterCursor(1,0);
+        CharSequence before=connection.getTextBeforeCursor(80,0);
+        boolean eligible=(selected==null||selected.length()==0)&&!SpanishSuggestions.wordContinues(after);
+        String word=eligible?SpanishSuggestions.currentWord(before):"";
+        if(BuildConfig.DEBUG)suggestionDiagnostics="before="+(before==null?-1:before.length())+", word="+word.length()+", eligible="+eligible+", generation="+generation;
+        try{
+          java.util.List<String> result=eligible?SpanishDictionary.get(this).suggest(word):java.util.Collections.emptyList();
+          suggestionHandler.post(()->{
+            if(generation!=suggestionGeneration||!canSuggest()||keyboard==null)return;
+            candidateWord=word;lastCandidates=result;keyboard.updateCandidates(result);
+          });
+        }catch(java.io.IOException ignored){/* Typing still works without the local index. */}
+      });
     },60);
   }
-  @Override public void onUpdateSelection(int oldStart,int oldEnd,int newStart,int newEnd,int candidatesStart,int candidatesEnd){super.onUpdateSelection(oldStart,oldEnd,newStart,newEnd,candidatesStart,candidatesEnd);cursor=newEnd;if(undoOriginal!=null&&(newStart!=newEnd||newEnd!=undoCursor))clearUndo();requestSuggestions();}
+  @Override public void onUpdateSelection(int oldStart,int oldEnd,int newStart,int newEnd,int candidatesStart,int candidatesEnd){
+    super.onUpdateSelection(oldStart,oldEnd,newStart,newEnd,candidatesStart,candidatesEnd);
+    cursor=newEnd;
+    if(undoOriginal!=null&&(newStart!=newEnd||newEnd!=undoCursor))clearUndo();
+    // Repeated same-selection notifications must not cancel a pending result.
+    if(oldStart!=newStart||oldEnd!=newEnd)requestSuggestions();
+  }
   @Override public void onSuggestion(String word){
     if(!canSuggest()||!lastCandidates.contains(word))return;InputConnection connection=getCurrentInputConnection();if(connection==null)return;
     CharSequence selected=connection.getSelectedText(0);String current=SpanishSuggestions.currentWord(connection.getTextBeforeCursor(80,0));
