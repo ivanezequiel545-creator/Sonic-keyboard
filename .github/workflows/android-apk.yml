@@ -1,0 +1,82 @@
+name: Android APK
+
+on:
+  push:
+    branches: [arena/25183508-sonic-keyboard]
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: velocity-android-preview
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      # Debug signing is only for this clearly labelled preview, not Play Store.
+      # Keep the key between builds where the GitHub cache is available.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: velocity-android-debug-key-${{ runner.os }}-v1
+      - run: npm ci
+      - run: npm test
+      - run: npm run android:sync
+      - name: Build installable debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -PvelocityVersionCode="$GITHUB_RUN_NUMBER"
+      - name: Prepare APK and checksum
+        run: |
+          mkdir -p apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-android.apk
+          cd apk
+          sha256sum velocity-android.apk > velocity-android.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: velocity-android-apk
+          path: apk/*
+          retention-days: 14
+      - name: Publish Android preview for the website download button
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cat > /tmp/android-notes.md <<EOF_NOTES
+          ## Velocity para Android — versión de prueba
+
+          Descarga **velocity-android.apk** (Android 6+ con Android System WebView actualizado).
+          Compilación: $GITHUB_SHA · ejecución $GITHUB_RUN_NUMBER.
+
+          1. Abre esta página en tu teléfono e inicia sesión en GitHub con acceso al repositorio privado.
+          2. Descarga el APK de Assets. Si Android lo solicita, autoriza temporalmente la instalación desde tu navegador. Desactiva ese permiso después.
+          3. Abre Velocity. Los recursos de la app están incluidos y funcionan sin conexión; los traductores externos necesitan internet.
+
+          **Es una app Android que contiene Velocity Web, no un teclado del sistema (IME). No permite escribir directamente en WhatsApp u otras apps.**
+          Los ZIP y JSON usan el menú nativo de compartir para guardarse o enviarse. El dictado depende de Web Speech API y puede no estar disponible en Android WebView.
+
+          APK de depuración firmado para pruebas; no es una publicación de Play Store ni una versión de producción. Android puede mostrar avisos de seguridad. El archivo .sha256 permite comprobar la integridad. Si la firma de una compilación cambia, puede ser necesario desinstalar la anterior (se borran sus datos locales); exporta primero tu configuración.
+          EOF_NOTES
+          if gh release view android-preview >/dev/null 2>&1; then
+            gh release edit android-preview --title 'Velocity para Android · Preview' --notes-file /tmp/android-notes.md --prerelease
+          else
+            gh release create android-preview --target "$GITHUB_SHA" --title 'Velocity para Android · Preview' --notes-file /tmp/android-notes.md --prerelease
+          fi
+          gh release upload android-preview apk/velocity-android.apk apk/velocity-android.apk.sha256 --clobber

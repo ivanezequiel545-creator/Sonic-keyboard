@@ -1,0 +1,12 @@
+{
+  "appId": "app.velocity.keyboard",
+  "appName": "Velocity",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
