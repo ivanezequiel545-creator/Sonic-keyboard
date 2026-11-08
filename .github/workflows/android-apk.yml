@@ -32,7 +32,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      VELOCITY_KEYSTORE_PATH: ${{ runner.temp }}/velocity.keystore
       VELOCITY_STORE_PASSWORD: ${{ secrets.VELOCITY_STORE_PASSWORD }}
       VELOCITY_KEY_ALIAS: ${{ secrets.VELOCITY_KEY_ALIAS }}
       VELOCITY_KEY_PASSWORD: ${{ secrets.VELOCITY_KEY_PASSWORD }}
@@ -67,6 +66,8 @@ jobs:
         env:
           SIGNING_KEY: ${{ secrets.VELOCITY_KEYSTORE_BASE64 }}
         run: |
+          export VELOCITY_KEYSTORE_PATH="$RUNNER_TEMP/velocity.keystore"
+          echo "VELOCITY_KEYSTORE_PATH=$VELOCITY_KEYSTORE_PATH" >> "$GITHUB_ENV"
           if test -n "$SIGNING_KEY"; then
             printf '%s' "$SIGNING_KEY" | base64 --decode > "$VELOCITY_KEYSTORE_PATH"
             chmod 600 "$VELOCITY_KEYSTORE_PATH"
@@ -142,7 +143,7 @@ jobs:
           gh release create v1.0.0 --target "$GITHUB_SHA" --title 'Velocity 1.0.0' --notes-file docs/releases/1.0.0.md apk/velocity-1.0.0.apk apk/velocity-1.0.0.apk.sha256
       - name: Remove private signing material
         if: always()
-        run: rm -f "$VELOCITY_KEYSTORE_PATH"
+        run: rm -f "${VELOCITY_KEYSTORE_PATH:-$RUNNER_TEMP/velocity.keystore}"
 
   diagnostics:
     if: github.event_name == 'workflow_dispatch' && inputs.diagnose_run != ''
