@@ -1,8 +1,8 @@
-name: Android · Velocity 1.0.1
+name: Android · Velocity 1.0.2
 
 on:
   push:
-    branches: [arena/90b621fa-sonic-keyboard]
+    branches: [arena/6a5679f3-sonic-keyboard]
     paths-ignore: ["**.md"]
   workflow_dispatch:
     inputs:
@@ -15,7 +15,7 @@ on:
         type: string
         default: ""
       publish:
-        description: Publicar 1.0.1 estable (requiere firma de producción y prueba física confirmada)
+        description: Publicar 1.0.2 estable (requiere firma de producción y prueba física confirmada)
         type: boolean
         default: false
 
@@ -80,12 +80,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Web interface, release links and offline downloads
         run: TEST_OFFLINE=1 npm run test:e2e
-      - name: Compile 1.0.1 verification APK, unit tests and lint
+      - name: Compile 1.0.2 verification APK, unit tests and lint
         id: android_build
         working-directory: android
         run: |
           chmod +x gradlew
           bash ../scripts/gradle-ci.sh :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+      - name: Check selected live media without bundling third-party files
+        run: node scripts/check-media-sources.mjs
       - name: Free hosted runner disk for emulator userdata
         run: |
           # Emulator 37 checks the image's minimum userdata size even when a
@@ -132,14 +134,14 @@ jobs:
       - name: Prepare APKs and checksums
         run: |
           mkdir -p apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.1-verification.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.2-verification.apk
           if test -f android/app/build/outputs/apk/release/app-release.apk; then
-            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.1.apk
+            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.2.apk
           fi
           (cd apk && for file in *.apk; do sha256sum "$file" > "$file.sha256"; done)
       - uses: actions/upload-artifact@v4
         with:
-          name: velocity-1.0.1-apk
+          name: velocity-1.0.2-apk
           path: apk/
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -150,14 +152,14 @@ jobs:
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
           retention-days: 14
-      - name: Publish signed stable 1.0.1
+      - name: Publish signed stable 1.0.2
         if: github.event_name == 'workflow_dispatch' && inputs.publish && inputs.device_verified && steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          test -s apk/velocity-1.0.1.apk
-          gh release create v1.0.1 --target "$GITHUB_SHA" --title 'Velocity 1.0.1' --notes-file docs/releases/1.0.1.md apk/velocity-1.0.1.apk apk/velocity-1.0.1.apk.sha256
+          test -s apk/velocity-1.0.2.apk
+          gh release create v1.0.2 --target "$GITHUB_SHA" --title 'Velocity 1.0.2' --notes-file docs/releases/1.0.2.md apk/velocity-1.0.2.apk apk/velocity-1.0.2.apk.sha256
       - name: Remove private signing material
         if: always()
         run: rm -f "${VELOCITY_KEYSTORE_PATH:-$RUNNER_TEMP/velocity.keystore}"

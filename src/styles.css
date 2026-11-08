@@ -5396,3 +5396,14 @@ main {
 .media-library small { display: block; font-size: 10px; line-height: 1.6; color: #425b7e; }
 @media (prefers-reduced-motion: reduce) { .emoji-grid button:hover { transform: none; } }
 .media-animation { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #314d70; padding: 0 0 10px; }
+.remote-media { border: 1px solid #b7cce7; border-radius: 12px; padding: 10px; margin-bottom: 14px; background: #f8fbff; }
+.remote-media h4, .media-library h4 { margin: 0 0 8px; color: #263b5b; font-size: 13px; }
+.remote-media-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; max-height: 320px; overflow: auto; }
+.remote-media-grid article { min-width: 0; padding: 5px; border-radius: 12px; border: 1px solid #b7cce7; background: white; }
+.remote-media-grid button { display: block; width: 100%; color: #263b5b; border-radius: 9px; padding: 4px; }
+.remote-media-grid button[aria-pressed="true"] { background: #dce8ff; outline: 2px solid #355ee0; }
+.remote-media-grid img, .remote-placeholder { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 7px; background: #eaf0fa; }
+.remote-placeholder { display: grid; place-items: center; color: #355ee0; font-weight: 700; }
+.remote-media-grid span { display: block; font-size: 11px; overflow-wrap: anywhere; }
+.remote-media-grid small, .remote-media-grid a { font-size: 10px; display: block; margin-top: 4px; color: #314d70; overflow-wrap: anywhere; }
+.media-actions button:disabled { opacity: .6; cursor: wait; }

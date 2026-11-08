@@ -13,7 +13,10 @@ public final class MediaRepository {
   public static final class Item {
     public final String id,label,kind,mime,file;
     final boolean imported;
-    Item(String id,String label,String kind,String mime,String file,boolean imported){this.id=id;this.label=label;this.kind=kind;this.mime=mime;this.file=file;this.imported=imported;}
+    public final String url,source,provider,author;
+    Item(String id,String label,String kind,String mime,String file,boolean imported){this(id,label,kind,mime,file,imported,"","","","");}
+    Item(String id,String label,String kind,String mime,String file,boolean imported,String url,String source,String provider,String author){this.id=id;this.label=label;this.kind=kind;this.mime=mime;this.file=file;this.imported=imported;this.url=url;this.source=source;this.provider=provider;this.author=author;}
+    public boolean online(){return !url.isEmpty();}
   }
   private static File folder(Context c){return new File(c.getFilesDir(),"media");}
   public static List<Item> list(Context c)throws IOException{
@@ -47,6 +50,7 @@ public final class MediaRepository {
   }
   static InputStream open(Context c,Item item)throws IOException{return item.imported?new FileInputStream(new File(folder(c),item.file)):c.getAssets().open("media/"+item.file);}
   public static Bitmap thumbnail(Context c,Item item)throws IOException{
+    if(item.online())throw new IOException("Use the consented online loader");
     BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
     try(InputStream in=open(c,item)){BitmapFactory.decodeStream(in,null,options);}
     options.inSampleSize=1;while(Math.max(options.outWidth,options.outHeight)/options.inSampleSize>240)options.inSampleSize*=2;

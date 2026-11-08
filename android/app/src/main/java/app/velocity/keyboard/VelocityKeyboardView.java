@@ -46,6 +46,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   private String mediaTab="emoji";
   private long lastSpace;
   private LinearLayout panel;
+  private MediaPanel mediaPanel;
   private TextView searchLabel;
   private boolean predictionsAllowed;
   private final List<Button> candidateButtons=new ArrayList<>();
@@ -53,11 +54,16 @@ public final class VelocityKeyboardView extends LinearLayout {
   public void setPredictionsAllowed(boolean allowed){predictionsAllowed=allowed;}
   public void updateCandidates(List<String> words){candidateWords=new ArrayList<>(words);paintCandidates();}
   String candidateDiagnostics(){StringBuilder result=new StringBuilder("buttons="+candidateButtons.size()+"; lengths=");for(Button button:candidateButtons)result.append(button.getText().length()).append(',');return result.toString();}
+  void markCandidatesPending(){
+    // Preserve the labels while querying, but never advertise/click stale data.
+    for(Button button:candidateButtons){button.setEnabled(false);button.setAlpha(.55f);button.setContentDescription("Actualizando sugerencias");}
+    if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+  }
   private void paintCandidates(){
     List<String> snapshot=new ArrayList<>(candidateWords);
     for(int i=0;i<candidateButtons.size();i++){
       Button button=candidateButtons.get(i);String word=i<snapshot.size()?snapshot.get(i):"";
-      button.setText(word);button.setEnabled(!word.isEmpty());
+      button.setText(word);button.setEnabled(!word.isEmpty());button.setAlpha(1f);
       button.setContentDescription(word.isEmpty()?"Sugerencia vacía":"Usar sugerencia: "+word);
       button.setTypeface(null,i==1?Typeface.BOLD:Typeface.NORMAL);
     }
@@ -105,6 +111,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   }
 
   public void finishEditor() {
+    if(mediaPanel!=null)mediaPanel.close();
     for (ComfortKey key : keys) key.cancel();
     handler.removeCallbacksAndMessages(null);
     shifted = capsLock = symbols = emojis = tools = searching = false;
@@ -134,6 +141,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   }
 
   public void refresh() {
+    if(mediaPanel!=null){mediaPanel.close();mediaPanel=null;}
     applyBottomPadding();
     for (ComfortKey key : keys) key.cancel();
     keys.clear();
@@ -188,7 +196,7 @@ public final class VelocityKeyboardView extends LinearLayout {
         Button choice=new Button(getContext());choice.setAllCaps(false);choice.setText(tab.equals("emoji")?"Emojis":tab.equals("gif")?"GIFs":"Stickers");choice.setTextSize(12);palette.chip(choice,tab.equals(mediaTab));choice.setOnClickListener(v->{mediaTab=tab;refresh();});tabs.addView(choice,new LayoutParams(0,dp(40),1));
       }
       panel.addView(tabs);
-      if(!mediaTab.equals("emoji")&&!privateMode())panel.addView(new MediaPanel(getContext(),mediaTab,(item,share)->listener.onMedia(item,share)));
+      if(!mediaTab.equals("emoji")&&!privateMode()){mediaPanel=new MediaPanel(getContext(),mediaTab,(item,share)->listener.onMedia(item,share));panel.addView(mediaPanel);}
       else {
       panel.addView(
         new EmojiPanel(

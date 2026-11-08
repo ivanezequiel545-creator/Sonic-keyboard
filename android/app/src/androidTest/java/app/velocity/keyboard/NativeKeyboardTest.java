@@ -325,6 +325,11 @@ public class NativeKeyboardTest {
     assertEquals(10,MediaRepository.list(isolated).size());
   }
 
+  private void restoreSecure(String key,String value)throws Exception{
+    if(value.equals("null"))shell("settings delete secure "+key);
+    else shell("settings put secure "+key+" '"+value.replace("'","'\\''")+"'");
+  }
+
   private void tapWithoutAccessibility(android.app.UiAutomation automation,android.graphics.Point point){
     long time=android.os.SystemClock.uptimeMillis();
     android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,point.x,point.y,0);
@@ -343,6 +348,7 @@ public class NativeKeyboardTest {
     String previous=shell("settings get secure default_input_method"),component="app.velocity.keyboard/.VelocityInputMethodService";
     String testPackage=instrumentation.getContext().getPackageName();
     boolean suggestions=KeyboardPreferences.flag(context,"suggestions"),incognito=KeyboardPreferences.flag(context,"incognito");
+    String accessibilityServices=shell("settings get secure enabled_accessibility_services"),accessibilityEnabled=shell("settings get secure accessibility_enabled");
     try{
       KeyboardPreferences.get(context).edit().putBoolean("suggestions",true).putBoolean("incognito",false).commit();
       shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
@@ -353,6 +359,12 @@ public class NativeKeyboardTest {
       for(int j=0;j<4;j++)points[j]=device.wait(Until.findObject(By.text(letters[j])),5000).getVisibleCenter();
       // Ordinary UiAutomator tests enable accessibility and masked this crash.
       // Retain the no-accessibility automation object: no UiDevice calls here.
+      // Clear regular accessibility services before the framework switches to
+      // the input-only connection. Restore the original settings in finally;
+      // never skip the assertion that accessibility is actually disabled.
+      // shell() obtains the default automation: finish all shell setup first.
+      shell("settings put secure enabled_accessibility_services ''");
+      shell("settings put secure accessibility_enabled 0");
       android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
       android.view.accessibility.AccessibilityManager manager=(android.view.accessibility.AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
       long deadline=android.os.SystemClock.uptimeMillis()+5000;
@@ -367,6 +379,8 @@ public class NativeKeyboardTest {
       assertTrue(device.wait(Until.hasObject(By.text("holahola").desc("external-probe-text")),5000));
       assertTrue(device.hasObject(By.text("q")));
     }finally{
+      restoreSecure("enabled_accessibility_services",accessibilityServices);
+      restoreSecure("accessibility_enabled",accessibilityEnabled);
       instrumentation.getUiAutomation(0);
       KeyboardPreferences.get(context).edit().putBoolean("suggestions",suggestions).putBoolean("incognito",incognito).commit();
       if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
@@ -374,7 +388,7 @@ public class NativeKeyboardTest {
   }
 
   private UiObject2 waitForSuggestion(UiDevice device,String word) throws Exception {
-    UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word)),10000);
+    UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word).enabled(true)),10000);
     if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"'; "+VelocityInputMethodService.suggestionDiagnostics+": "+tree.toString("UTF-8"));}
     return result;
   }
@@ -488,8 +502,11 @@ public class NativeKeyboardTest {
       view.setPredictionsAllowed(true);view.startEditor(false,false,false,"↵");
       android.widget.Button stableQ=findButton(view,"q");
       view.updateCandidates(java.util.Arrays.asList("hola","gracias","bien"));
-      assertNotNull(findButton(view,"gracias"));
+      android.widget.Button pending=findButton(view,"gracias");assertNotNull(pending);assertTrue(pending.isEnabled());
+      view.markCandidatesPending();assertFalse(pending.isEnabled());assertEquals("gracias",pending.getText().toString());assertEquals("Actualizando sugerencias",pending.getContentDescription().toString());
+      assertSame(stableQ,findButton(view,"q"));
       view.updateCandidates(java.util.Arrays.asList("holaa","hola","holas"));
+      assertTrue(findButton(view,"hola").isEnabled());assertEquals("Usar sugerencia: hola",findButton(view,"hola").getContentDescription().toString());
       assertNotNull(findButton(view,"holaa"));assertNotNull(findButton(view,"hola"));assertNotNull(findButton(view,"holas"));
       assertNull(findButton(view,"gracias"));assertSame(stableQ,findButton(view,"q"));
       int originalPadding = KeyboardPreferences.number(context, "bottomPadding");

@@ -1,3 +1,4 @@
+import RemoteMediaGallery from "./RemoteMediaGallery.jsx";
 import React, { useEffect, useState } from "react";
 
 export function MediaTabs({ value, onChange }) {
@@ -7,7 +8,7 @@ export function MediaTabs({ value, onChange }) {
   </div>;
 }
 
-export default function MediaPicker({ kind }) {
+export default function MediaPicker({ kind, incognito = false }) {
   const [animate, setAnimate] = useState(false);
   const [items, setItems] = useState([]), [selected, setSelected] = useState(null), [status, setStatus] = useState("");
   useEffect(() => { let alive = true; fetch("/media/catalog.json").then(r => { if (!r.ok) throw Error(); return r.json(); }).then(data => { if (alive) setItems(data); }).catch(() => { if (alive) setStatus("No se pudo abrir el pack local."); }); return () => { alive = false; }; }, []);
@@ -22,6 +23,8 @@ export default function MediaPicker({ kind }) {
     } catch (error) { setStatus(error.name === "AbortError" ? "No se compartió ningún archivo." : "No se pudo compartir. Usa Descargar."); }
   }
   return <div className="media-library">
+    <RemoteMediaGallery kind={kind} incognito={incognito} />
+    <h4>En mi dispositivo · sin conexión</h4>
     <p>Pack original y sin conexión. En Android, envía desde el teclado en apps compatibles; aquí puedes descargar o compartir el archivo. Importa tus propios archivos desde los ajustes nativos.</p>
     {kind === "gif" && <label className="media-animation"><input type="checkbox" checked={animate} onChange={event => setAnimate(event.target.checked)} /> Animar miniaturas GIF</label>}
     <div className="media-grid">{items.filter(item => item.kind === kind).map(item =>
@@ -30,6 +33,6 @@ export default function MediaPicker({ kind }) {
       </button>)}</div>
     {selected && <div className="media-actions"><a download={selected.file} href={`/media/${selected.file}`}>Descargar {selected.kind === "gif" ? "GIF" : "sticker"}</a><button type="button" onClick={share}>Compartir archivo</button></div>}
     <p role="status">{status}</p>
-    <small>Sin buscadores externos ni envío de tus palabras. Los stickers se comparten como imágenes; cada app decide cómo mostrarlos.</small>
+    <small>La selección remota requiere tu autorización; después se muestra al abrir estas pestañas hasta que la desactives. No se envían tus palabras. Los stickers se comparten como imágenes; cada app decide cómo mostrarlos.</small>
   </div>;
 }

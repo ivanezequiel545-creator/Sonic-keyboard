@@ -21,6 +21,7 @@ export default defineConfig({
           "/licenses/spanish-words.txt",
           "/licenses/emojibase.txt",
           "/media/catalog.json",
+          "/media/sources.json",
           ...media.map(item => `/media/${item.file}`),
           ...Object.keys(bundle).map((name) => `/${name}`),
         ];

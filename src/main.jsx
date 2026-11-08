@@ -925,7 +925,7 @@ function App() {
           </button>
           <div className="sidebar-footer">
             <span className="status-dot" /> Hecho para ser libre.
-            <span>v1.0.1</span>
+            <span>v1.0.2</span>
           </div>
         </div>
       </aside>
@@ -1069,7 +1069,7 @@ function App() {
                 </div>
               </section>
               <div className="comfort-announcement">
-                <span>✦ NUEVO · VELOCITY 1.0.1</span>
+                <span>✦ NUEVO · VELOCITY 1.0.2</span>
                 <div>
                   <strong>Un teclado que se siente mejor.</strong>
                   <p>
@@ -1199,7 +1199,7 @@ function App() {
           {page === "customize" && (
             <>
               <PageHeading
-                eyebrow="VELOCITY 1.0.1 · HECHO PARA TUS MANOS"
+                eyebrow="VELOCITY 1.0.2 · HECHO PARA TUS MANOS"
                 title="Cada detalle. A tu manera."
                 text="Más comodidad, menos esfuerzo. Diseña tu teclado y pruébalo al instante."
               />
