@@ -273,6 +273,12 @@ public class NativeKeyboardTest {
     }
   }
 
+  private UiObject2 waitForSuggestion(UiDevice device,String word) throws Exception {
+    UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word)),10000);
+    if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"': "+tree.toString("UTF-8"));}
+    return result;
+  }
+
   @Test(timeout=90000)
   public void spanishSuggestionsCompleteCorrectUndoAndRespectProtectedFields() throws Exception {
     Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -286,8 +292,10 @@ public class NativeKeyboardTest {
       shell("am start -W -n "+testPackage+"/app.velocity.keyboard.InputProbeActivity -f 0x10008000 --ez suggestions true");
       device.wait(Until.findObject(By.desc("external-probe-text")),10000).click();
       assertTrue(device.wait(Until.hasObject(By.desc("Sugerencias en español")),10000));
-      device.findObject(By.desc("external-probe-text")).setText("holaa");
-      device.wait(Until.findObject(By.desc("Usar sugerencia: hola")),10000).click();
+      // Exercise actual IME keystrokes, not only accessibility ACTION_SET_TEXT.
+      assertEquals(12000,SpanishDictionary.get(context).size());
+      for(String key:new String[]{"h","o","l","a","a"})device.wait(Until.findObject(By.text(key)),5000).click();
+      waitForSuggestion(device,"hola").click();
       assertTrue(device.wait(Until.hasObject(By.text("hola ").desc("external-probe-text")),5000));
       device.findObject(By.desc("external-probe-text")).setText("grasias");
       assertTrue(device.wait(Until.hasObject(By.desc("Usar sugerencia: gracias")),5000));
@@ -357,7 +365,13 @@ public class NativeKeyboardTest {
       android.widget.Button q = findButton(view, "q");
       assertNotNull(q);
       assertEquals(android.view.Gravity.CENTER,q.getGravity());
-      assertEquals(android.view.View.TEXT_ALIGNMENT_CENTER,q.getTextAlignment());
+      // Resolve/layout the detached test view first. getTextAlignment() alone
+      // reports inherited gravity until View resolves its parent direction.
+      view.measure(android.view.View.MeasureSpec.makeMeasureSpec(1080,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(0,android.view.View.MeasureSpec.UNSPECIFIED));
+      view.layout(0,0,1080,view.getMeasuredHeight());
+      assertEquals(android.text.Layout.Alignment.ALIGN_CENTER,q.getLayout().getParagraphAlignment(0));
+      float glyphCenter=q.getCompoundPaddingLeft()+(q.getLayout().getLineLeft(0)+q.getLayout().getLineRight(0))/2f;
+      assertEquals(q.getWidth()/2f,glyphCenter,1f);
       assertEquals(android.view.Gravity.CENTER,findButton(view,"1").getGravity());
       assertEquals(android.view.Gravity.CENTER,findButton(view,"⌫").getGravity());
       android.view.View holder = view.getChildAt(0);

@@ -498,9 +498,9 @@ public final class VelocityKeyboardView extends LinearLayout {
     button.setPadding(0, 0, 0, 0);
     button.setIncludeFontPadding(false);
     // OEM/service themes can default to TOP|START. Never inherit key alignment.
+    button.setSingleLine(true);
     button.setGravity(Gravity.CENTER);
     button.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-    button.setSingleLine(true);
     int alpha =
       (KeyboardPreferences.number(getContext(), "keyOpacity") * 255) / 100;
     int color = special ? 0xff20375d : (keyColor & 0x00ffffff) | (alpha << 24);
