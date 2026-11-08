@@ -6,9 +6,9 @@ Un teclado web y Android nativo, personalizable y en español. Creado desde cero
 
 **[Descargar APK 1.0.2 de verificación y ver las pruebas](docs/verification-1.0.2.md)** · CI correcto en Android 10 y 12.
 
-En **☺ → GIFs / Stickers**, pulsa **Cargar selección en línea** para ver seis referencias de [GIPHY/famosos](https://giphy.com/explore/famosos) y tres del pack [G0VY8R de Sticker.ly](https://sticker.ly/s/G0VY8R), con fuente y autor identificado. No son únicamente accesos al navegador: se muestran en el panel y pueden enviarse como archivos a apps compatibles. Se conservan los GIFs/stickers propios y la importación sin conexión.
+En **☺ → GIFs / Stickers**, autoriza una vez con **Cargar selección en línea** para ver seis referencias de [GIPHY/famosos](https://giphy.com/explore/famosos) y tres del pack [G0VY8R de Sticker.ly](https://sticker.ly/s/G0VY8R), con fuente y autor identificado. Las miniaturas aparecen directamente al abrir estas pestañas después de autorizar. Tocarlas envía el archivo a apps compatibles, sin abrir el navegador ni adjuntar la URL del proveedor. Los créditos quedan en una sección aparte. Se conservan los GIFs/stickers propios y la importación sin conexión.
 
-La carga es explícita, requiere Internet y comunica al proveedor las peticiones de imagen/IP, no tus palabras. No es un buscador completo, no usa una clave de API ajena ni descarga HTML durante el uso. Los archivos de terceros no van dentro de la APK ni se ofrecen como libres de derechos. Su disponibilidad y condiciones dependen de sus fuentes. La web también depende de los permisos CORS del proveedor al descargar; ofrece la fuente original si falla.
+La primera autorización es explícita; se recuerda hasta desactivar la selección. Requiere Internet y comunica al proveedor las peticiones de imagen/IP, no tus palabras. No es un buscador completo, no usa una clave de API ajena ni descarga HTML durante el uso. Los archivos de terceros no van dentro de la APK ni se ofrecen como libres de derechos. Su disponibilidad y condiciones dependen de sus fuentes. La web también depende de los permisos CORS del proveedor al descargar; ofrece la fuente original si falla.
 
 La caché nativa es de hasta 16 MB, descargas de hasta 4 MB y reutilización durante siete días; puede borrarse desde ajustes. La red tiene cola separada de escritura/sugerencias, límites y cancelación al cerrar el panel. Se desactiva en privado y campos protegidos. Se mantienen las correcciones de estabilidad de la 1.0.1 revisada. [Notas y límites de la 1.0.2](docs/releases/1.0.2.md).
 
@@ -107,7 +107,7 @@ Publica el contenido de `dist/` en la raíz de un dominio con HTTPS. El manifest
 | [Alpha 2](https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.2) | `personalPreview` | Vista nativa, temas, una mano y prueba interna. IME deshabilitado. |
 | [Alpha 3](https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.3) | `imePreview`      | IME real, activable y seleccionable para usar en otras apps.       |
 
-Los enlaces de la web apuntan a estos prelanzamientos. **El repositorio es privado**: inicia sesión en GitHub con una cuenta que tenga acceso; no se incluyen tokens en el sitio. Las versiones aparecen solo después de que su publicación termine correctamente. La versión histórica `android-preview` sigue siendo el antiguo contenedor web, no el IME.
+Los enlaces de la web apuntan a estos prelanzamientos. **El repositorio es público** por decisión de su propietario. Las descargas de artefactos de Actions todavía pueden pedir una sesión de GitHub; no se incluyen tokens en el sitio. Las versiones aparecen solo después de que su publicación termine correctamente. La versión histórica `android-preview` sigue siendo el antiguo contenedor web, no el IME.
 
 ### Instalar y activar Alpha 3
 

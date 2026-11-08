@@ -4,7 +4,7 @@ No se publica automáticamente una APK debug como estable. Los push de la rama d
 
 ## Selección externa: aceptación adicional para 1.0.2
 
-Las pruebas usan respuestas controladas, no certifican la disponibilidad en vivo de GIPHY/Sticker.ly. Antes de publicar, probar las nueve referencias con red real en el teléfono, consentimiento previo a las imágenes, metadatos/fuentes, GIF animado recibido y WebP recibido. Verificar sin conexión, archivo retirado/HTML/redirección, cambio de campo o modo privado durante descarga y borrado de caché. Revisar condiciones de los proveedores: los archivos externos no están bajo la licencia del código. No activar publicación de producción sin resolver disponibilidad y uso permitido.
+Las pruebas de entrega usan respuestas controladas. Hay además un chequeo real de las nueve descargas desde el runner, registrado en `media-sources.json`, pero no certifica la red del teléfono ni CORS. Antes de publicar, probar las nueve referencias con red real en el teléfono, consentimiento previo a las imágenes, metadatos/fuentes, GIF animado recibido y WebP recibido. Verificar sin conexión, archivo retirado/HTML/redirección, cambio de campo o modo privado durante descarga y borrado de caché. Revisar condiciones de los proveedores: los archivos externos no están bajo la licencia del código. No activar publicación de producción sin resolver disponibilidad y uso permitido.
 
 ## Firma de producción
 
