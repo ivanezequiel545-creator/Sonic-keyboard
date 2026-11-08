@@ -1,6 +1,10 @@
-# Validar y publicar 1.0.1
+# Validar y publicar 1.0.2
 
-No se publica automáticamente una APK debug como estable. Los push de la rama de trabajo ejecutan unidades, pruebas web/offline, compilación/lint Android y pruebas de IME en otra aplicación del emulador. Si todo pasa, Actions adjunta `velocity-1.0.1-apk`, con APK de verificación y checksum. Tener estos archivos **no equivale** a haber publicado la versión estable.
+No se publica automáticamente una APK debug como estable. Los push de la rama de trabajo ejecutan unidades, pruebas web/offline, compilación/lint Android y pruebas de IME en otra aplicación del emulador. Si todo pasa, Actions adjunta `velocity-1.0.2-apk`, con APK de verificación y checksum. Tener estos archivos **no equivale** a haber publicado la versión estable.
+
+## Selección externa: aceptación adicional para 1.0.2
+
+Las pruebas usan respuestas controladas, no certifican la disponibilidad en vivo de GIPHY/Sticker.ly. Antes de publicar, probar las nueve referencias con red real en el teléfono, consentimiento previo a las imágenes, metadatos/fuentes, GIF animado recibido y WebP recibido. Verificar sin conexión, archivo retirado/HTML/redirección, cambio de campo o modo privado durante descarga y borrado de caché. Revisar condiciones de los proveedores: los archivos externos no están bajo la licencia del código. No activar publicación de producción sin resolver disponibilidad y uso permitido.
 
 ## Firma de producción
 
@@ -33,6 +37,6 @@ Registrar modelo/Android, APK/hash y resultado. Probar en al menos un teléfono 
 
 ## Publicación inmutable
 
-En Actions ejecuta **Android · Velocity 1.0.1**, seleccionando el commit/rama validado; activa `publish` y `device_verified` solo cuando hayas hecho la revisión física. El flujo falla si no se confirma la prueba o faltan secretos. Tras todas las pruebas, compila la APK release con firma protegida y crea `v1.0.1` con `velocity-1.0.1.apk` y SHA-256. No sobrescribe etiquetas alpha ni una 1.0.1 ya existente. Si cambia código tras revisar en el teléfono, repetir la validación de ese commit.
+En Actions ejecuta **Android · Velocity 1.0.2**, seleccionando el commit/rama validado; activa `publish` y `device_verified` solo cuando hayas hecho la revisión física. El flujo falla si no se confirma la prueba o faltan secretos. Tras todas las pruebas, compila la APK release con firma protegida y crea `v1.0.2` con `velocity-1.0.2.apk` y SHA-256. No sobrescribe etiquetas alpha ni una 1.0.2 ya existente. Si cambia código tras revisar en el teléfono, repetir la validación de ese commit.
 
-Los enlaces web conservan Alpha 3 como última APK publicada hasta completar este proceso; no apuntan a una 1.0.1 inexistente. Después de publicar, actualizar `src/platform.js` y las pruebas de enlaces para indicar la estable, manteniendo las tres alpha como historial.
+Los enlaces web conservan Alpha 3 como última APK publicada hasta completar este proceso; no apuntan a una 1.0.2 inexistente. Después de publicar, actualizar `src/platform.js` y las pruebas de enlaces para indicar la estable, manteniendo las tres alpha como historial.

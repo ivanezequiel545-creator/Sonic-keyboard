@@ -1,6 +1,16 @@
 # Velocity ⚡
 
-Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
+Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend propio, cuentas, anuncios ni claves de API.
+
+## 1.0.2: selección de tus páginas de GIFs y stickers
+
+**[Descargar APK 1.0.2 de verificación y ver las pruebas](docs/verification-1.0.2.md)** · CI correcto en Android 10 y 12.
+
+En **☺ → GIFs / Stickers**, pulsa **Cargar selección en línea** para ver seis referencias de [GIPHY/famosos](https://giphy.com/explore/famosos) y tres del pack [G0VY8R de Sticker.ly](https://sticker.ly/s/G0VY8R), con fuente y autor identificado. No son únicamente accesos al navegador: se muestran en el panel y pueden enviarse como archivos a apps compatibles. Se conservan los GIFs/stickers propios y la importación sin conexión.
+
+La carga es explícita, requiere Internet y comunica al proveedor las peticiones de imagen/IP, no tus palabras. No es un buscador completo, no usa una clave de API ajena ni descarga HTML durante el uso. Los archivos de terceros no van dentro de la APK ni se ofrecen como libres de derechos. Su disponibilidad y condiciones dependen de sus fuentes. La web también depende de los permisos CORS del proveedor al descargar; ofrece la fuente original si falla.
+
+La caché nativa es de hasta 16 MB, descargas de hasta 4 MB y reutilización durante siete días; puede borrarse desde ajustes. La red tiene cola separada de escritura/sugerencias, límites y cancelación al cerrar el panel. Se desactiva en privado y campos protegidos. Se mantienen las correcciones de estabilidad de la 1.0.1 revisada. [Notas y límites de la 1.0.2](docs/releases/1.0.2.md).
 
 ## 1.0.1: letras centradas y barra de palabras
 
@@ -61,7 +71,7 @@ El catálogo se regenera antes de cada build desde `emojibase-data@17.0.0` (MIT,
 
 Para escribir en otras apps de Android instala **Alpha 3**, abre Velocity → «Activar mi teclado» → activa Velocity en Ajustes de Android → selecciónalo como método de entrada. No se activa sin una decisión explícita del usuario. Funciona en campos compatibles; algunas apps y pantallas del sistema restringen teclados externos. No es un teclado para iPhone.
 
-La PWA sigue siendo solo esta web. Los ZIP son fondos y configuraciones, no APK ni extensiones. El traductor, las notas y el dictado siguen siendo herramientas de la app; no están integrados en el IME. No se incluye predicción, aprendizaje ni escritura por deslizamiento. Mantén instalado tu teclado anterior mientras pruebas esta alpha.
+La PWA sigue siendo solo esta web. Los ZIP son fondos y configuraciones, no APK ni extensiones. El traductor, las notas y el dictado siguen siendo herramientas de la app; no están integrados en el IME. Las alpha no incluían predicción, aprendizaje ni escritura por deslizamiento; las sugerencias locales se añadieron en 1.0.1. Mantén instalado tu teclado anterior durante las pruebas.
 
 ## Ejecutar
 
@@ -112,15 +122,15 @@ Todos los APK comparten `applicationId`, con códigos de versión ascendentes y 
 
 Cada versión adjunta un SHA-256: `sha256sum -c velocity-android.apk.sha256`. Son APK de prueba, no de Play Store, sin garantías de compatibilidad universal. Lee las [notas de cada alpha](docs/releases/).
 
-### El teclado nativo
+### El teclado nativo de las alpha históricas
 
 `VelocityInputMethodService` usa `InputConnection`, sin WebView. Se registra con `BIND_INPUT_METHOD`; solo Alpha 3 habilita el componente. Incluye ñ, vocales acentuadas con pulsación larga, ü/símbolos en ?123, mayúsculas/bloqueo, números, emojis, seis temas, una mano a ambos lados y acciones de editor (buscar/siguiente/enviar/listo/nueva línea). Adapta la distribución a números y contraseñas, y desactiva emojis en campos privados. El borrado respeta puntos de código Unicode, no necesariamente grafemas compuestos completos.
 
-El servicio **no guarda, registra ni transmite pulsaciones**. Solo guarda preferencias. La app mantiene permiso de internet para sus herramientas web; el IME no usa la red. No se solicita acceso a contactos, micrófono o almacenamiento general. No hay autocorrección ni dictado nativo en estas versiones. La configuración nativa se puede editar por separado; el botón «Aplicar estos ajustes al teclado» copia expresamente tema, mano, sonido y vibración desde la interfaz web. No hay sincronización con una cuenta.
+El servicio **no guarda, registra ni transmite pulsaciones**. Solo guarda preferencias. En aquellas alpha la app mantenía permiso de Internet para sus herramientas web y el IME no usaba la red. **Desde 1.0.2, el IME sí usa Internet cuando cargas explícitamente la selección externa de GIFs/stickers**, como se explica al inicio; no envía pulsaciones. No se solicita acceso a contactos, micrófono o almacenamiento general. No hay autocorrección ni dictado nativo en estas versiones. La configuración nativa se puede editar por separado; el botón «Aplicar estos ajustes al teclado» copia expresamente tema, mano, sonido y vibración desde la interfaz web. No hay sincronización con una cuenta.
 
 ### Compilar y publicar las alpha históricas
 
-Esta subsección describe las etiquetas `v1.1.0-alpha.*`, no el flujo actual 1.0.0. Para la versión actual utiliza los comandos del inicio y [el procedimiento estable](docs/stable-release.md).
+Esta subsección describe las etiquetas `v1.1.0-alpha.*`, no el flujo actual 1.0.2. Para la versión actual utiliza los comandos del inicio y [el procedimiento estable](docs/stable-release.md).
 
 El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En aquellas etiquetas compilaba tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
 
