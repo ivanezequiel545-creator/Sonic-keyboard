@@ -143,10 +143,12 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import os, subprocess, re
-          log = subprocess.check_output(['gh','run','view',os.environ['RUN_ID'],'--log-failed'],text=True)
+          repo = os.environ['GH_REPO']
+          job = subprocess.check_output(['gh','api',f"repos/{repo}/actions/runs/{os.environ['RUN_ID']}/jobs",'--jq','.jobs[]|select(.name=="build")|.id'],text=True).strip()
+          log = subprocess.check_output(['gh','api',f'repos/{repo}/actions/jobs/{job}/logs'],text=True)
           lines = [line for line in log.splitlines() if re.search(r'error|warning|panic|fatal|KVM|emulator |emulator-|Boot|boot|GPU|qemu',line,re.I)]
-          text = '\n'.join(lines[:90] + ['--- END ---'] + lines[-15:])
+          text = '\n'.join(line for line in lines if re.search(r'FATAL|PANIC|Exception|FAILED',line))[:3000] + '\n--- LOG TAIL ---\n' + log[-9000:]
           for start in range(0,len(text),3300):
               chunk=text[start:start+3300].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
-              print('::notice title=Runner diagnostics::' + chunk)
+              print('::notice title=Runner diagnostics ' + str(start) + '::' + chunk)
           PYTHON
