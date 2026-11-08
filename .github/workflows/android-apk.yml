@@ -125,3 +125,18 @@ jobs:
                       message = ET.tostring(issue, encoding='unicode')[:3500].replace('%','%25').replace('\n','%0A').replace('\r','%0D')
                       print('::error title=Lint report::' + message)
           PYTHON
+      - name: Summarize failed runner logs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ inputs.diagnose_run }}
+        run: |
+          python3 - <<'PYTHON'
+          import os, subprocess, re
+          log = subprocess.check_output(['gh','run','view',os.environ['RUN_ID'],'--log-failed'],text=True)
+          lines = [line for line in log.splitlines() if re.search(r'error|warning|panic|fatal|KVM|emulator |emulator-|Boot|boot|GPU|qemu',line,re.I)]
+          text = '\n'.join(lines[:90] + ['--- END ---'] + lines[-15:])
+          for start in range(0,len(text),3300):
+              chunk=text[start:start+3300].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+              print('::notice title=Runner diagnostics::' + chunk)
+          PYTHON
