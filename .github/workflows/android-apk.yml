@@ -191,8 +191,12 @@ jobs:
           result = subprocess.run(['gh','run','view',os.environ['RUN_ID'],'--log'],capture_output=True,text=True)
           log = result.stdout + result.stderr
 
-          lines = [line for line in log.splitlines() if re.search(r'error|warning|panic|fatal|KVM|emulator |emulator-|Boot|boot|GPU|qemu',line,re.I)]
-          text = '\n'.join(line for line in lines if re.search(r'FATAL|PANIC|Exception|FAILED',line))[:3000] + '\n--- LOG TAIL ---\n' + log[-9000:]
+          lines = log.splitlines()
+          selected = []
+          for index,line in enumerate(lines):
+              if re.search(r'Expected|Received|Error:|java.lang|FAILED|Assertion|FATAL|PANIC',line):
+                  selected.extend(lines[max(0,index-3):index+6])
+          text = '\n'.join(dict.fromkeys(selected))[:24000] + '\n--- LOG TAIL ---\n' + log[-1500:]
           for start in range(0,len(text),3300):
               chunk=text[start:start+3300].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
               print('::notice title=Runner diagnostics ' + str(start) + '::' + chunk)
