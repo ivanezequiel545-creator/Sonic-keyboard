@@ -698,7 +698,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     super.onDetachedFromWindow();
   }
 
-  private final class ComfortKey extends Button {
+  private final class ComfortKey extends androidx.appcompat.widget.AppCompatButton {
 
     boolean repeat, cursor, repeating, dragging;
     float downX, lastX;
