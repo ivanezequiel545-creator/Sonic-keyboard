@@ -374,7 +374,7 @@ public class NativeKeyboardTest {
   }
 
   private UiObject2 waitForSuggestion(UiDevice device,String word) throws Exception {
-    UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word)),10000);
+    UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word).enabled(true)),10000);
     if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"'; "+VelocityInputMethodService.suggestionDiagnostics+": "+tree.toString("UTF-8"));}
     return result;
   }
@@ -488,8 +488,11 @@ public class NativeKeyboardTest {
       view.setPredictionsAllowed(true);view.startEditor(false,false,false,"↵");
       android.widget.Button stableQ=findButton(view,"q");
       view.updateCandidates(java.util.Arrays.asList("hola","gracias","bien"));
-      assertNotNull(findButton(view,"gracias"));
+      android.widget.Button pending=findButton(view,"gracias");assertNotNull(pending);assertTrue(pending.isEnabled());
+      view.markCandidatesPending();assertFalse(pending.isEnabled());assertEquals("gracias",pending.getText().toString());assertEquals("Actualizando sugerencias",pending.getContentDescription().toString());
+      assertSame(stableQ,findButton(view,"q"));
       view.updateCandidates(java.util.Arrays.asList("holaa","hola","holas"));
+      assertTrue(findButton(view,"hola").isEnabled());assertEquals("Usar sugerencia: hola",findButton(view,"hola").getContentDescription().toString());
       assertNotNull(findButton(view,"holaa"));assertNotNull(findButton(view,"hola"));assertNotNull(findButton(view,"holas"));
       assertNull(findButton(view,"gracias"));assertSame(stableQ,findButton(view,"q"));
       int originalPadding = KeyboardPreferences.number(context, "bottomPadding");

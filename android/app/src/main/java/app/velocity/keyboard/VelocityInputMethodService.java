@@ -40,11 +40,12 @@ public final class VelocityInputMethodService
     suggestionHandler.removeCallbacksAndMessages(null);
     candidateWord="";lastCandidates=java.util.Collections.emptyList();
     if(!canSuggest()){if(keyboard!=null)keyboard.updateCandidates(lastCandidates);return;}
+    if(keyboard!=null)keyboard.markCandidatesPending();
     suggestionHandler.postDelayed(()->{
       final InputConnection connection=getCurrentInputConnection();
       if(connection==null||!canSuggest()||generation!=suggestionGeneration)return;
       // IPC reads must not block the IME UI thread. Keep the previous labels
-      // visible while querying; lastCandidates is already invalidated above.
+      // visible but disabled while querying; stale actions are invalidated above.
       EmojiRepository.IO.execute(()->{
         if(generation!=suggestionGeneration||!canSuggest())return;
         try{

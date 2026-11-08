@@ -54,11 +54,16 @@ public final class VelocityKeyboardView extends LinearLayout {
   public void setPredictionsAllowed(boolean allowed){predictionsAllowed=allowed;}
   public void updateCandidates(List<String> words){candidateWords=new ArrayList<>(words);paintCandidates();}
   String candidateDiagnostics(){StringBuilder result=new StringBuilder("buttons="+candidateButtons.size()+"; lengths=");for(Button button:candidateButtons)result.append(button.getText().length()).append(',');return result.toString();}
+  void markCandidatesPending(){
+    // Preserve the labels while querying, but never advertise/click stale data.
+    for(Button button:candidateButtons){button.setEnabled(false);button.setAlpha(.55f);button.setContentDescription("Actualizando sugerencias");}
+    if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+  }
   private void paintCandidates(){
     List<String> snapshot=new ArrayList<>(candidateWords);
     for(int i=0;i<candidateButtons.size();i++){
       Button button=candidateButtons.get(i);String word=i<snapshot.size()?snapshot.get(i):"";
-      button.setText(word);button.setEnabled(!word.isEmpty());
+      button.setText(word);button.setEnabled(!word.isEmpty());button.setAlpha(1f);
       button.setContentDescription(word.isEmpty()?"Sugerencia vacía":"Usar sugerencia: "+word);
       button.setTypeface(null,i==1?Typeface.BOLD:Typeface.NORMAL);
     }
