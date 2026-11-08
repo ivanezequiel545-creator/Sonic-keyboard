@@ -1,6 +1,6 @@
-# Validar y publicar 1.0.0
+# Validar y publicar 1.0.1
 
-No se publica automáticamente una APK debug como estable. Los push de la rama de trabajo ejecutan unidades, pruebas web/offline, compilación/lint Android y pruebas de IME en otra aplicación del emulador. Si todo pasa, Actions adjunta `velocity-1.0.0-apk`, con APK de verificación y checksum. Tener estos archivos **no equivale** a haber publicado la versión estable.
+No se publica automáticamente una APK debug como estable. Los push de la rama de trabajo ejecutan unidades, pruebas web/offline, compilación/lint Android y pruebas de IME en otra aplicación del emulador. Si todo pasa, Actions adjunta `velocity-1.0.1-apk`, con APK de verificación y checksum. Tener estos archivos **no equivale** a haber publicado la versión estable.
 
 ## Firma de producción
 
@@ -22,12 +22,14 @@ Registrar modelo/Android, APK/hash y resultado. Probar en al menos un teléfono 
 - Chat, navegador y editor; texto, selección, saltos, acciones Buscar/Enviar/Siguiente.
 - Contraseña/PIN/campos sin aprendizaje: sin emojis/portapapeles sensible ni registros de recientes.
 - Cómodo/Compacto/Accesible, una mano, paisaje y gestos/tres botones; margen de navegación, errores de pulsación y comodidad real.
+- Centrado de letras/números/acciones en el dispositivo donde se reportó el problema y con su escala de fuente.
+- Barra española: completar una palabra, corrección al espacio, deshacer con ⌫, alternar opciones, cursor a mitad de texto, evitar resultados de otro campo, privado/contraseña/email/número y filtros sin autocorrección.
 - Repetición de borrado, cursor por espacio, acentos, símbolos y número; secuencias emoji completas.
 - Búsqueda nativa de emojis (la consulta no llega al campo de la otra app), categorías, tonos, recientes/favoritos y modo privado.
 - Foto grande/incorrecta, giro, volver de galería y restablecer; funcionamiento en avión y con WebView actualizado.
 
 ## Publicación inmutable
 
-En Actions ejecuta **Android · Velocity 1.0.0**, seleccionando el commit/rama validado; activa `publish` y `device_verified` solo cuando hayas hecho la revisión física. El flujo falla si no se confirma la prueba o faltan secretos. Tras todas las pruebas, compila la APK release con firma protegida y crea `v1.0.0` con `velocity-1.0.0.apk` y SHA-256. No sobrescribe etiquetas alpha ni una 1.0.0 ya existente. Si cambia código tras revisar en el teléfono, repetir la validación de ese commit.
+En Actions ejecuta **Android · Velocity 1.0.1**, seleccionando el commit/rama validado; activa `publish` y `device_verified` solo cuando hayas hecho la revisión física. El flujo falla si no se confirma la prueba o faltan secretos. Tras todas las pruebas, compila la APK release con firma protegida y crea `v1.0.1` con `velocity-1.0.1.apk` y SHA-256. No sobrescribe etiquetas alpha ni una 1.0.1 ya existente. Si cambia código tras revisar en el teléfono, repetir la validación de ese commit.
 
-Los enlaces web conservan Alpha 3 como última APK publicada hasta completar este proceso; no apuntan a una 1.0.0 inexistente. Después de publicar, actualizar `src/platform.js` y las pruebas de enlaces para indicar la estable, manteniendo las tres alpha como historial.
+Los enlaces web conservan Alpha 3 como última APK publicada hasta completar este proceso; no apuntan a una 1.0.1 inexistente. Después de publicar, actualizar `src/platform.js` y las pruebas de enlaces para indicar la estable, manteniendo las tres alpha como historial.

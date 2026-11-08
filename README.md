@@ -2,9 +2,21 @@
 
 Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
 
+## 1.0.1: letras centradas y barra de palabras
+
+Corrige la alineación observada en un teléfono real: letras, números, espacio y acciones quedan centrados horizontal y verticalmente, sin depender del tema del fabricante. La franja superior del IME ahora propone palabras en español **sin añadir altura**; las herramientas y el modo de una mano siguen en ⋯.
+
+Incluye 12.000 palabras por frecuencia para sugerencias locales, y corrección automática conservadora de errores comunes al pulsar espacio. Toca una sugerencia para completar; ⌫ inmediatamente después de una corrección automática restaura lo que habías escrito. Ajustes nativos permiten desactivar sugerencias y autocorrección por separado. No aprende ni guarda tus palabras ni usa servicios de Gboard. No es un corrector gramatical ni promete la precisión de Gboard. Se desactiva en campos protegidos y cuando el editor impide sugerencias; tampoco autocorrige búsquedas de filtro. La PWA comparte sugerencias por prefijo; el deshacer de autocorrección corresponde al IME Android.
+
+El vocabulario derivado de Hermit Dave/FrequencyWords/OpenSubtitles2018 conserva su **CC BY-SA 4.0**, independiente de la Unlicense del código. [Fuente, modificaciones y licencia](public/licenses/spanish-words.txt). Las dos distribuciones están versionadas; las compilaciones no descargan diccionarios ni datos de usuarios.
+
+**Verificación 1.0.1 completada:** [CI correcto, APK de prueba e instrucciones](docs/verification-1.0.1.md). Pasaron 13 pruebas Node, 16 de navegador y 5 instrumentadas Android, además de unidades y lint.
+
+La APK de verificación es debug. La publicación de producción 1.0.1 sigue protegida por firma persistente y confirmación de prueba física; ver [el procedimiento](docs/stable-release.md) y [las notas 1.0.1](docs/releases/1.0.1.md).
+
 ## 1.0.0: comodidad y personalización
 
-Esta rama prepara la primera versión estable **1.0.0**; no confundir el número del código con una versión ya publicada. Añade teclas ajustables, perfiles de comodidad, fila numérica, foto privada, colores, cursor por espacio, borrado continuo y **3.979 entradas Unicode 17.0 en diez categorías**. El selector nativo usa celdas recicladas y carga fuera del hilo de UI; escribir letras no reconstruye el teclado.
+La base de esta actualización fue la implementación **1.0.0**; no confundir el número del código con una versión ya publicada. Añade teclas ajustables, perfiles de comodidad, fila numérica, foto privada, colores, cursor por espacio, borrado continuo y **3.979 entradas Unicode 17.0 en diez categorías**. El selector nativo usa celdas recicladas y carga fuera del hilo de UI; escribir letras no reconstruye el teclado.
 
 En la app abre **Personalizar**; en Android puedes usar también **Activar mi teclado → ajustes nativos**. El IME no guarda conversaciones ni lee automáticamente el portapapeles. Recientes/favoritos guardan únicamente IDs de emojis. Los recientes se suspenden en privado. La compatibilidad visual de emojis depende de la fuente del teléfono.
 
@@ -12,7 +24,7 @@ En la app abre **Personalizar**; en Android puedes usar también **Activar mi te
 
 **Verificación automática completada:** [CI correcto y APK 1.0.0 de prueba](docs/verification-1.0.0.md). Incluye 11 pruebas Node, 15 de interfaz/offline y la instrumentación del IME en otra aplicación. La APK disponible sigue siendo de verificación, no una publicación estable.
 
-### Compilar y probar 1.0.0
+### Compilar y probar la versión actual
 
 ```sh
 npm ci
@@ -157,4 +169,4 @@ No hay servidor de traducción, telemetría ni llamadas automáticas a servicios
 
 El nombre del repositorio es histórico. **No se usan imágenes, personajes, logotipos, música ni recursos de Sonic o SEGA.** El fondo azul y las ilustraciones abstractas de rayos y órbitas son diseños propios; no se afirma que material de Sonic carezca de copyright.
 
-El código y los fondos propios se distribuyen con la [Unlicense](LICENSE), ya presente en el repositorio: dedicación al dominio público en la medida permitida por la legislación aplicable. Las dependencias mantienen sus licencias: React, Capacitor y Lucide (MIT/ISC según paquete), JSZip (MIT o GPL-3.0) e Inter (SIL OFL-1.1). Consulta los archivos de licencia de los paquetes instalados.
+El código y los fondos propios se distribuyen con la [Unlicense](LICENSE), ya presente en el repositorio: dedicación al dominio público en la medida permitida por la legislación aplicable. Los datos de frecuencia españoles conservan CC BY-SA 4.0, con atribución en `public/licenses/spanish-words.txt`. Las dependencias mantienen sus licencias: React, Capacitor y Lucide (MIT/ISC según paquete), JSZip (MIT o GPL-3.0) e Inter (SIL OFL-1.1). Consulta los archivos de licencia de los paquetes instalados.
