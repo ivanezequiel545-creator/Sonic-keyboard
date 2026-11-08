@@ -15,20 +15,22 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+      - name: Ensure Android SDK 35 is installed
+        run: |
+          test -d "$ANDROID_HOME"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       # Debug signing is only for this clearly labelled preview, not Play Store.
       # Keep the key between builds where the GitHub cache is available.
       - uses: actions/cache@v4
@@ -42,7 +44,12 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -PvelocityVersionCode="$GITHUB_RUN_NUMBER"
+          if ! ./gradlew assembleDebug --no-daemon -PvelocityVersionCode="$GITHUB_RUN_NUMBER" > /tmp/velocity-gradle.log 2>&1; then
+            cat /tmp/velocity-gradle.log
+            python3 -c 'from pathlib import Path; log=Path("/tmp/velocity-gradle.log").read_text()[-9000:]; print("::error::" + log.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D"))'
+            exit 1
+          fi
+          cat /tmp/velocity-gradle.log
       - name: Prepare APK and checksum
         run: |
           mkdir -p apk
