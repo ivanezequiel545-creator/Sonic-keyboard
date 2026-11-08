@@ -1,6 +1,6 @@
 # Velocity ⚡
 
-Un teclado web móvil, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
+Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
 
 ## Qué incluye
 
@@ -16,13 +16,13 @@ Un teclado web móvil, personalizable y en español. Creado desde cero sobre est
 - Aplicación web instalable (PWA) y modo sin conexión **en la compilación de producción**, tras cargar y almacenar los recursos en una primera visita.
 - Diseño adaptable, navegación móvil, ventanas con control de foco y Escape, respeto de movimiento reducido e iconos/fuente alojados localmente.
 
-## Lo que no es
+## Web, app y teclado del sistema: tres cosas distintas
 
-**La web y el APK no son un teclado del sistema (IME) de Android o iOS.** Una web no puede convertirse en el teclado del sistema para escribir en WhatsApp, Telegram u otras apps. El área de prueba y las herramientas funcionan dentro de Velocity; el texto se puede copiar a otra aplicación.
+**La web y Alpha 1 no sustituyen el teclado del sistema. Alpha 2 añade una vista previa nativa. Alpha 3 sí incluye un servicio de teclado Android (`InputMethodService`).**
 
-Instalar la PWA solo añade esta web a la pantalla de inicio. El APK incluye esta interfaz en una aplicación Android con Capacitor, pero tampoco sustituye el teclado del sistema. Para un teclado nativo, se incluye un enlace al proyecto independiente [HeliBoard](https://github.com/Helium314/HeliBoard), para Android. No hay integración ni afiliación con ese proyecto.
+Para escribir en otras apps de Android instala **Alpha 3**, abre Velocity → «Activar mi teclado» → activa Velocity en Ajustes de Android → selecciónalo como método de entrada. No se activa sin una decisión explícita del usuario. Funciona en campos compatibles; algunas apps y pantallas del sistema restringen teclados externos. No es un teclado para iPhone.
 
-Los ZIP son fondos y configuraciones, no módulos ejecutables ni traductores completos. Las sugerencias usan reglas locales, no un modelo de autocorrección. El dictado, la vibración, la instalación y el portapapeles dependen de las capacidades y permisos del navegador. El dictado puede requerir conexión y procesamiento por el proveedor del navegador.
+La PWA sigue siendo solo esta web. Los ZIP son fondos y configuraciones, no APK ni extensiones. El traductor, las notas y el dictado siguen siendo herramientas de la app; no están integrados en el IME. No se incluye predicción, aprendizaje ni escritura por deslizamiento. Mantén instalado tu teclado anterior mientras pruebas esta alpha.
 
 ## Ejecutar
 
@@ -50,33 +50,55 @@ Publica el contenido de `dist/` en la raíz de un dominio con HTTPS. El manifest
 - El service worker precarga HTML, JavaScript (incluido el generador ZIP), CSS, fuente e iconos. Los enlaces y servicios externos no están disponibles sin internet.
 - En desarrollo no se registra un service worker, para evitar servir versiones antiguas del código.
 
-## APK Android
+## Tres APK preliminares para Android
 
-La sección Inicio, la sección Descargas y la ayuda de instalación incluyen **Descargar APK** y un enlace a la versión `android-preview` de GitHub. El repositorio es privado: el visitante debe iniciar sesión en GitHub y tener acceso. No se incluyen tokens ni credenciales en el sitio.
+| Versión                                                                                          | Variante Gradle   | Alcance                                                            |
+| ------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------ |
+| [Alpha 1](https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.1) | `webPreview`      | App con las herramientas web, sin teclado activable.               |
+| [Alpha 2](https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.2) | `personalPreview` | Vista nativa, temas, una mano y prueba interna. IME deshabilitado. |
+| [Alpha 3](https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.3) | `imePreview`      | IME real, activable y seleccionable para usar en otras apps.       |
 
-El workflow `.github/workflows/android-apk.yml` compila la rama de esta sesión en GitHub Actions con Node 22, Java 21 y Android SDK 35. Publica un APK **de depuración firmado para pruebas**, un checksum SHA-256 y un artefacto de Actions. No es un paquete de Play Store ni una compilación release de producción. El botón de descarga necesita que ese workflow termine correctamente; si Actions está bloqueado por permisos, cuotas o facturación, se debe resolver en la configuración del repositorio.
+Los enlaces de la web apuntan a estos prelanzamientos. **El repositorio es privado**: inicia sesión en GitHub con una cuenta que tenga acceso; no se incluyen tokens en el sitio. Las versiones aparecen solo después de que su publicación termine correctamente. La versión histórica `android-preview` sigue siendo el antiguo contenedor web, no el IME.
 
-- Requisitos del teléfono: Android 6.0+ y Android System WebView actualizado.
-- El APK contiene los recursos web y funciona sin conexión desde el primer inicio. No registra el service worker dentro de la app nativa.
-- No ofrece un servicio InputMethodService ni pide que lo actives como teclado del sistema.
-- Para instalarlo, abre la versión en GitHub desde el teléfono, descarga `velocity-android.apk` y autoriza temporalmente la instalación desde tu navegador si Android lo solicita. Revoca ese permiso después.
-- Para guardar ZIP/JSON desde Android se usa `Filesystem` en la caché privada y el menú nativo `Share`, en vez de enlaces `blob:` que WebView no descarga. Los archivos temporales pueden eliminarse al limpiar la caché. No se solicitan permisos generales de almacenamiento.
-- Las notas y ajustes permanecen en el almacenamiento local de la app; desinstalarla los borra. La copia de seguridad automática de Android está desactivada. La web y el APK no sincronizan datos entre sí.
-- El dictado depende de Web Speech API y puede no existir en WebView; la app lo indica sin fingir soporte.
-- La firma de prueba se conserva en caché de Actions cuando está disponible. Si cambia, puede ser necesario desinstalar antes de actualizar. Para producción se debe configurar una clave de firma propia mediante secretos, nunca en Git.
+### Instalar y activar Alpha 3
 
-### Compilar localmente
+1. Abre su versión en GitHub desde Android y descarga `velocity-android.apk` desde **Assets**.
+2. Android 6.0+; para las herramientas web mantén Android System WebView actualizado.
+3. Si Android lo solicita, autoriza temporalmente instalar desde tu navegador y revoca el permiso después.
+4. Abre Velocity → **Activar mi teclado** → **1 · Activar en Ajustes de Android**. Lee la advertencia estándar de Android antes de aceptar.
+5. Regresa → **2 · Elegir Velocity como teclado**. Abre un campo de texto de otra aplicación.
+6. Para revertir, usa ◎ o selecciona tu teclado anterior en Ajustes. Desactiva Velocity antes de desinstalarlo si ya no lo quieres.
 
-Instala Android Studio, Android SDK 35 y Java 21, y configura `ANDROID_HOME`/`JAVA_HOME` (o `android/local.properties` para el SDK). Luego:
+Todos los APK comparten `applicationId`, con códigos de versión ascendentes y la misma firma **de depuración dentro de una compilación**. No son tres apps instalables a la vez. Puedes ir directamente a Alpha 3. Si la firma difiere de una compilación antigua, exporta tus ajustes antes de desinstalarla: desinstalar borra sus datos. La clave de prueba se conserva solo mientras la caché de Actions lo permita; no se promete una firma de producción persistente.
+
+Cada versión adjunta un SHA-256: `sha256sum -c velocity-android.apk.sha256`. Son APK de prueba, no de Play Store, sin garantías de compatibilidad universal. Lee las [notas de cada alpha](docs/releases/).
+
+### El teclado nativo
+
+`VelocityInputMethodService` usa `InputConnection`, sin WebView. Se registra con `BIND_INPUT_METHOD`; solo Alpha 3 habilita el componente. Incluye ñ, vocales acentuadas con pulsación larga, ü/símbolos en ?123, mayúsculas/bloqueo, números, emojis, seis temas, una mano a ambos lados y acciones de editor (buscar/siguiente/enviar/listo/nueva línea). Adapta la distribución a números y contraseñas, y desactiva emojis en campos privados. El borrado respeta puntos de código Unicode, no necesariamente grafemas compuestos completos.
+
+El servicio **no guarda, registra ni transmite pulsaciones**. Solo guarda preferencias. La app mantiene permiso de internet para sus herramientas web; el IME no usa la red. No se solicita acceso a contactos, micrófono o almacenamiento general. No hay autocorrección ni dictado nativo en estas versiones. La configuración nativa se puede editar por separado; el botón «Aplicar estos ajustes al teclado» copia expresamente tema, mano, sonido y vibración desde la interfaz web. No hay sincronización con una cuenta.
+
+### Compilar y publicar
+
+El workflow `.github/workflows/android-apk.yml` usa Node 22, Java 21, SDK 35 y un emulador Android 10. En cada push de esta rama compila tres variantes, comprueba pruebas web/offline, pruebas unitarias nativas, lint y una prueba de escritura del IME en **una aplicación de prueba separada** (incluida solo en el APK de tests). Las pruebas automatizadas no sustituyen probar en teléfonos reales.
+
+Tras verificar la ejecución, `workflow_dispatch` con `publish=true` publica los tres APK y checksums como prelanzamientos de GitHub del commit comprobado. No reescribe tags de versiones pertenecientes a otro commit. Si Actions está bloqueado por permisos, cuota o facturación, hay que resolverlo en GitHub antes de que aparezcan archivos descargables.
+
+Para compilar localmente, instala Android Studio, SDK 35 y Java 21, y configura `ANDROID_HOME`/`JAVA_HOME`:
 
 ```sh
 npm ci
-npm run android:sync       # Compila la web y sincroniza Capacitor
-npm run android:open       # Abre el proyecto en Android Studio
-npm run android:apk        # Genera android/app/build/outputs/apk/debug/app-debug.apk
+npm run android:sync
+npm run android:open
+npm run android:apk       # genera las tres variantes debug
+# APKs: android/app/build/outputs/apk/{webPreview,personalPreview,imePreview}/debug/
+cd android
+./gradlew testImePreviewDebugUnitTest lintImePreviewDebug
+./gradlew connectedImePreviewDebugAndroidTest # requiere emulador/dispositivo de pruebas
 ```
 
-Los APK, keystores, recursos web copiados y archivos locales del SDK están excluidos de Git. `android/` contiene el proyecto nativo y el wrapper de Gradle necesarios para reproducir la compilación.
+Los APK, keystores y recursos web copiados están excluidos de Git. Se adjuntan a Releases y artefactos de Actions, no al código del repositorio. Para producción configura una clave propia con secretos, nunca en Git.
 
 ## Comprobar
 
@@ -87,7 +109,7 @@ npm audit                 # Auditoría de dependencias
 
 # En una terminal: npm run dev
 npx playwright install chromium
-npm run test:e2e           # 8 flujos de interfaz y 1 prueba offline opcional
+npm run test:e2e           # Flujos de interfaz, 3 versiones y prueba offline opcional
 ```
 
 Para probar la versión compilada, sirve primero `dist/` con `npm run preview -- --port 5173`:

@@ -1,10 +1,10 @@
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export const isNativeApp = Capacitor.isNativePlatform();
 export const androidReleaseUrl =
-  "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/android-preview";
+  "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/tag/v1.1.0-alpha.3";
 export const androidApkUrl =
-  "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/download/android-preview/velocity-android.apk";
+  "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/download/v1.1.0-alpha.3/velocity-android.apk";
 
 // Android WebView cannot download blob: URLs. Use native cache + the Android
 // share sheet instead, so users can save or send the same ZIP/JSON as on web.
@@ -39,4 +39,10 @@ export async function saveDownload(blob, name) {
   anchor.download = name;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// Local bridge: only appearance settings cross into native code, never editor text.
+export const nativeKeyboard = registerPlugin("VelocityKeyboard");
+export async function configureNativeKeyboard(options) {
+  if (isNativeApp) await nativeKeyboard.configure(options);
 }

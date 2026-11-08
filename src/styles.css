@@ -4734,3 +4734,97 @@ main {
     margin-left: 0;
   }
 }
+
+/* Three explicitly scoped Android prereleases. */
+.android-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+}
+.android-banner-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.android-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.android-preview-card {
+  padding: 17px;
+  border: 1px solid #e4e9f1;
+  border-radius: 9px;
+  background: #fbfcfe;
+}
+.android-preview-card:hover {
+  border-color: #a6bdec;
+  transform: translateY(-2px);
+}
+.android-preview-card.recommended {
+  border-color: #c2d3ff;
+  background: #f2f6ff;
+}
+.android-preview-card > span {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #7491bd;
+}
+.android-preview-card > strong {
+  display: block;
+  margin-top: 9px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.android-preview-card > p {
+  color: #8996aa;
+  font-size: 10px;
+  line-height: 1.8;
+  margin-top: 9px;
+}
+.android-preview-card > small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #6683b7;
+  font-size: 9px;
+  margin-top: 16px;
+}
+.android-banner-bottom {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: space-between;
+}
+.android-banner-bottom > small {
+  font-size: 9px;
+  color: #98a3b3;
+  line-height: 1.8;
+  max-width: 430px;
+}
+.native-status-message {
+  color: #6683b7;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.modal .android-preview-grid {
+  grid-template-columns: 1fr;
+}
+.modal .android-banner-bottom {
+  flex-direction: column;
+  align-items: flex-start;
+}
+@media (max-width: 580px) {
+  .android-preview-grid {
+    grid-template-columns: 1fr;
+  }
+  .android-banner-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  .android-banner .android-banner-actions {
+    align-items: flex-start;
+  }
+}

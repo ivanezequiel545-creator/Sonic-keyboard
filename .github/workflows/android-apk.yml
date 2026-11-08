@@ -1,22 +1,27 @@
-name: Android APK
+name: Android · 3 prereleases
 
 on:
   push:
-    branches: [arena/25183508-sonic-keyboard]
+    branches: [arena/e155af27-sonic-keyboard]
     paths-ignore: ["**.md"]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publicar los tres APK como prelanzamientos después de las pruebas
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 concurrency:
-  group: velocity-android-preview
-  cancel-in-progress: true
+  group: velocity-android-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -27,12 +32,9 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Ensure Android SDK 35 is installed
+      - name: Android SDK
         run: |
-          test -d "$ANDROID_HOME"
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
-      # Debug signing is only for this clearly labelled preview, not Play Store.
-      # Keep the key between builds where the GitHub cache is available.
       - uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
@@ -40,50 +42,52 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run android:sync
-      - name: Build installable debug APK
+      - name: Install browser for web interface tests
+        run: npx playwright install --with-deps chromium
+      - name: Web interface, release links and offline downloads
+        run: TEST_OFFLINE=1 npm run test:e2e
+      - name: Compile all three APKs, native unit tests and IME lint
         working-directory: android
         run: |
           chmod +x gradlew
-          if ! ./gradlew assembleDebug --no-daemon -PvelocityVersionCode="$GITHUB_RUN_NUMBER" > /tmp/velocity-gradle.log 2>&1; then
-            cat /tmp/velocity-gradle.log
-            python3 -c 'from pathlib import Path; log=Path("/tmp/velocity-gradle.log").read_text()[-9000:]; print("::error::" + log.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D"))'
-            exit 1
-          fi
-          cat /tmp/velocity-gradle.log
-      - name: Prepare APK and checksum
+          ./gradlew assembleDebug testWebPreviewDebugUnitTest testPersonalPreviewDebugUnitTest testImePreviewDebugUnitTest lintImePreviewDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+      - name: Enable KVM for the Android emulator
         run: |
-          mkdir -p apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-android.apk
-          cd apk
-          sha256sum velocity-android.apk > velocity-android.apk.sha256
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test Alpha 3 as an actual keyboard in a separate app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          target: default
+          disable-animations: true
+          script: cd android && ./gradlew connectedImePreviewDebugAndroidTest --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+      - name: Prepare APKs and checksums
+        run: |
+          for entry in '1 webPreview' '2 personalPreview' '3 imePreview'; do
+            read -r stage flavor <<< "$entry"
+            mkdir -p "apk/alpha-$stage"
+            cp "android/app/build/outputs/apk/$flavor/debug/app-$flavor-debug.apk" "apk/alpha-$stage/velocity-android.apk"
+            (cd "apk/alpha-$stage" && sha256sum velocity-android.apk > velocity-android.apk.sha256)
+          done
       - uses: actions/upload-artifact@v4
         with:
-          name: velocity-android-apk
-          path: apk/*
+          name: velocity-three-android-previews
+          path: apk/
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-reports
+          path: |
+            android/app/build/reports/
+            android/app/build/outputs/androidTest-results/
           retention-days: 14
-      - name: Publish Android preview for the website download button
+      - name: Publish three GitHub prereleases
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: |
-          cat > /tmp/android-notes.md <<EOF_NOTES
-          ## Velocity para Android — versión de prueba
-
-          Descarga **velocity-android.apk** (Android 6+ con Android System WebView actualizado).
-          Compilación: $GITHUB_SHA · ejecución $GITHUB_RUN_NUMBER.
-
-          1. Abre esta página en tu teléfono e inicia sesión en GitHub con acceso al repositorio privado.
-          2. Descarga el APK de Assets. Si Android lo solicita, autoriza temporalmente la instalación desde tu navegador. Desactiva ese permiso después.
-          3. Abre Velocity. Los recursos de la app están incluidos y funcionan sin conexión; los traductores externos necesitan internet.
-
-          **Es una app Android que contiene Velocity Web, no un teclado del sistema (IME). No permite escribir directamente en WhatsApp u otras apps.**
-          Los ZIP y JSON usan el menú nativo de compartir para guardarse o enviarse. El dictado depende de Web Speech API y puede no estar disponible en Android WebView.
-
-          APK de depuración firmado para pruebas; no es una publicación de Play Store ni una versión de producción. Android puede mostrar avisos de seguridad. El archivo .sha256 permite comprobar la integridad. Si la firma de una compilación cambia, puede ser necesario desinstalar la anterior (se borran sus datos locales); exporta primero tu configuración.
-          EOF_NOTES
-          if gh release view android-preview >/dev/null 2>&1; then
-            gh release edit android-preview --title 'Velocity para Android · Preview' --notes-file /tmp/android-notes.md --prerelease
-          else
-            gh release create android-preview --target "$GITHUB_SHA" --title 'Velocity para Android · Preview' --notes-file /tmp/android-notes.md --prerelease
-          fi
-          gh release upload android-preview apk/velocity-android.apk apk/velocity-android.apk.sha256 --clobber
+        run: bash scripts/publish-previews.sh "$GITHUB_SHA"

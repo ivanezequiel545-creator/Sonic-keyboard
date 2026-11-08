@@ -276,20 +276,29 @@ test("production service worker supports offline keyboard, phrases and ZIP gener
   await context.setOffline(false);
 });
 
-test("Android download links are available with accurate limitations", async ({
+test("three Android prereleases distinguish wrapper, preview and real IME", async ({
   page,
 }) => {
   const banner = page.getByRole("region", { name: "Aplicación Android" });
-  await expect(banner).toContainText("no un teclado del sistema");
+  await expect(banner).toContainText("la web y Alpha 1 no sustituyen");
   await expect(banner).toContainText("Repositorio privado");
+  await expect(banner.locator(".android-preview-card")).toHaveCount(3);
+  for (let stage = 1; stage <= 3; stage++) {
+    await expect(
+      banner.locator(".android-preview-card").nth(stage - 1),
+    ).toHaveAttribute(
+      "href",
+      new RegExp(`releases/tag/v1\\.1\\.0-alpha\\.${stage}$`),
+    );
+  }
   await expect(
-    banner.getByRole("link", { name: "Descargar APK", exact: true }),
+    banner.getByRole("link", { name: "Descargar APK · Alpha 3", exact: true }),
   ).toHaveAttribute(
     "href",
-    "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/download/android-preview/velocity-android.apk",
+    "https://github.com/ivanezequiel545-creator/Sonic-keyboard/releases/download/v1.1.0-alpha.3/velocity-android.apk",
   );
   await navigate(page, "Descargas");
-  await expect(
-    banner.getByRole("link", { name: "Versión e instrucciones" }),
-  ).toHaveAttribute("href", /releases\/tag\/android-preview$/);
+  await expect(banner.locator(".recommended")).toContainText(
+    "Teclado Android real (IME)",
+  );
 });

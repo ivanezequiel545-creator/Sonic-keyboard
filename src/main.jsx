@@ -47,7 +47,10 @@ import {
   saveDownload as saveFile,
   androidReleaseUrl,
   androidApkUrl,
+  nativeKeyboard,
+  configureNativeKeyboard,
 } from "./platform.js";
+import { androidPreviews } from "./android-previews.js";
 import "./styles.css";
 
 function useStored(key, initial) {
@@ -1029,7 +1032,7 @@ function App() {
                   <small>Tus palabras son tuyas</small>
                 </span>
               </div>
-              <AndroidDownloadBanner />
+              <AndroidDownloadBanner theme={themeId} settings={settings} />
               <div className="workspace-grid">
                 {renderKeyboardPreview()}
                 <section className="quick-tools card">
@@ -1258,7 +1261,7 @@ function App() {
                 title="Lo tuyo, listo para llevar."
                 text="Descarga todo de una vez o crea tu propio paquete. Sin cuentas, sin rodeos."
               />
-              <AndroidDownloadBanner />
+              <AndroidDownloadBanner theme={themeId} settings={settings} />
               <div className="downloads-layout">
                 <section className="card pack-picker">
                   <div className="section-card-heading">
@@ -1347,9 +1350,9 @@ function App() {
                   <div className="card info-card">
                     <h3>¿Buscas un teclado del sistema?</h3>
                     <p>
-                      Para escribir en otras apps necesitas un teclado nativo.
-                      Puedes explorar HeliBoard, una alternativa libre para
-                      Android.
+                      Para escribir en otras apps de Android instala Velocity
+                      Alpha 3 y activa su teclado nativo. Si buscas otra
+                      alternativa libre, también puedes explorar HeliBoard.
                     </p>
                     <a
                       className="text-link"
@@ -1880,7 +1883,7 @@ function App() {
                   <Download size={24} />
                 </span>
                 <h2 id="modal-title">Un lugar en tu celular.</h2>
-                <AndroidDownloadBanner />
+                <AndroidDownloadBanner theme={themeId} settings={settings} />
                 <p className="modal-subtitle">
                   Instala Velocity como una app web, sin pasar por una tienda.
                 </p>
@@ -1907,11 +1910,11 @@ function App() {
                 <div className="notice">
                   <Info size={19} />
                   <p>
-                    Velocity es un teclado web de prueba:{" "}
+                    La versión web{" "}
                     <strong>no reemplaza el teclado del sistema</strong> en
-                    WhatsApp ni en otras apps. El modo sin conexión está
-                    disponible en la versión compilada después de una primera
-                    visita completa.
+                    WhatsApp ni en otras apps. Para Android, instala el APK
+                    Alpha 3 y activa su teclado nativo desde Ajustes. El modo
+                    sin conexión de la web requiere una primera visita completa.
                   </p>
                 </div>
                 <button
@@ -1947,9 +1950,12 @@ function App() {
                   <details>
                     <summary>¿Funciona en WhatsApp o Telegram?</summary>
                     <p>
-                      No. Esta es una app web, no un teclado nativo de Android o
-                      iOS. En Herramientas encontrarás HeliBoard, un proyecto
-                      independiente para Android.
+                      La web no escribe directamente en otras apps. En Android,
+                      el APK Alpha 3 sí incluye un servicio de teclado: actívalo
+                      y selecciónalo desde «Activar mi teclado». Funcionará en
+                      campos de texto compatibles de otras apps, salvo
+                      restricciones de estas o del sistema. No es un teclado
+                      para iPhone.
                     </p>
                   </details>
                   <details>
@@ -2134,29 +2140,151 @@ function App() {
     </div>
   );
 }
-function AndroidDownloadBanner() {
-  if (isNativeApp) return null;
+function AndroidDownloadBanner({ theme, settings }) {
+  const [nativeStatus, setNativeStatus] = useState(null);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    let alive = true;
+    if (isNativeApp)
+      nativeKeyboard
+        .getStatus()
+        .then((status) => {
+          if (alive) setNativeStatus(status);
+        })
+        .catch(() => {
+          if (alive)
+            setMessage(
+              "Este APK antiguo no incluye el módulo nativo. Instala Alpha 3 desde GitHub.",
+            );
+        });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (isNativeApp)
+    return (
+      <section
+        className="android-banner card"
+        aria-label="Teclado Android nativo"
+      >
+        <div className="android-banner-copy">
+          <span className="overline">
+            VELOCITY ANDROID · {nativeStatus?.version || "COMPROBANDO VERSIÓN"}
+          </span>
+          <h3>
+            {nativeStatus?.imeAvailable
+              ? "Actívalo. Escribe en tus apps."
+              : "Tu próximo paso: el teclado nativo."}
+          </h3>
+          <p>
+            {nativeStatus?.imeAvailable
+              ? "Activa Velocity en Ajustes de Android y selecciónalo como método de entrada. No se activa sin tu permiso."
+              : nativeStatus?.stage === 2
+                ? "Alpha 2 incluye la vista previa nativa. Para escribir fuera de Velocity, instala Alpha 3."
+                : "Esta versión contiene la web. Instala Alpha 3 para disponer del teclado del sistema."}
+          </p>
+        </div>
+        <div className="android-banner-actions">
+          {nativeStatus?.stage >= 2 && (
+            <>
+              <button
+                className="button primary"
+                onClick={async () => {
+                  try {
+                    await nativeKeyboard.openSetup();
+                  } catch {
+                    setMessage(
+                      "No se pudo abrir la configuración del teclado.",
+                    );
+                  }
+                }}
+              >
+                <Keyboard size={16} />
+                {nativeStatus.imeAvailable
+                  ? "Activar mi teclado"
+                  : "Probar teclado nativo"}
+              </button>
+              <button
+                className="text-link"
+                onClick={async () => {
+                  try {
+                    await configureNativeKeyboard({
+                      theme,
+                      hand: settings.hand,
+                      sound: settings.sound,
+                      haptics: settings.haptics,
+                    });
+                    setMessage(
+                      "Tema y ajustes copiados al teclado nativo. Vuelve a abrirlo para verlos.",
+                    );
+                  } catch {
+                    setMessage("No se pudieron copiar los ajustes.");
+                  }
+                }}
+              >
+                Aplicar estos ajustes al teclado
+              </button>
+            </>
+          )}
+          {!nativeStatus?.imeAvailable && (
+            <a
+              className="text-link"
+              href={androidReleaseUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Descargar Alpha 3<ExternalLink size={13} />
+            </a>
+          )}
+        </div>
+        {message && (
+          <p role="status" className="native-status-message">
+            {message}
+          </p>
+        )}
+      </section>
+    );
   return (
     <section className="android-banner card" aria-label="Aplicación Android">
-      <span className="tool-icon blue">
-        <Smartphone size={25} />
-      </span>
-      <div className="android-banner-copy">
-        <span className="overline">
-          VELOCITY PARA ANDROID · VERSIÓN DE PRUEBA
+      <div className="android-banner-heading">
+        <span className="tool-icon blue">
+          <Smartphone size={25} />
         </span>
-        <h3>También en tu bolsillo.</h3>
-        <p>
-          APK para Android 6 o superior. Incluye esta app, no un teclado del
-          sistema. No escribe en otras aplicaciones.
-        </p>
-        <small>
-          Repositorio privado: inicia sesión en GitHub con acceso al proyecto
-          para descargar. Si aún no aparece el archivo, revisa la compilación en
-          la página de la versión.
-        </small>
+        <div className="android-banner-copy">
+          <span className="overline">TRES PRELANZAMIENTOS · ANDROID 6+</span>
+          <h3>De tu espacio a tus otras apps.</h3>
+          <p>
+            Elige una etapa. Alpha 3 incluye un teclado del sistema real; la web
+            y Alpha 1 no sustituyen el teclado de Android.
+          </p>
+        </div>
       </div>
-      <div className="android-banner-actions">
+      <div className="android-preview-grid">
+        {androidPreviews.map((preview) => (
+          <a
+            key={preview.stage}
+            className={`android-preview-card ${preview.stage === 3 ? "recommended" : ""}`}
+            href={preview.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span>
+              ALPHA {preview.stage}
+              {preview.stage === 3 ? " · IME" : ""}
+            </span>
+            <strong>{preview.title}</strong>
+            <p>{preview.description}</p>
+            <small>
+              Ver APK e instrucciones <ExternalLink size={12} />
+            </small>
+          </a>
+        ))}
+      </div>
+      <div className="android-banner-bottom">
+        <small>
+          Repositorio privado: inicia sesión en GitHub con acceso. Descarga el
+          APK desde Assets. Versiones de prueba, no Play Store.
+        </small>
         <a
           className="button primary"
           href={androidApkUrl}
@@ -2164,21 +2292,13 @@ function AndroidDownloadBanner() {
           rel="noreferrer"
         >
           <Download size={16} />
-          Descargar APK
-        </a>
-        <a
-          className="text-link"
-          href={androidReleaseUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Versión e instrucciones
-          <ExternalLink size={13} />
+          Descargar APK · Alpha 3
         </a>
       </div>
     </section>
   );
 }
+
 function PageHeading({ eyebrow, title, text }) {
   return (
     <div className="page-heading">
