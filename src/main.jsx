@@ -51,13 +51,22 @@ import {
   configureNativeKeyboard,
 } from "./platform.js";
 import { androidPreviews } from "./android-previews.js";
+import {
+  DEFAULT_SETTINGS,
+  sanitizeSettings,
+  previousGraphemeLength,
+  readableInk,
+} from "./preferences.js";
+import EmojiPicker from "./components/EmojiPicker.jsx";
+import CustomizationPanel from "./components/CustomizationPanel.jsx";
 import "./styles.css";
 
 function useStored(key, initial) {
   const [value, setValue] = useState(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : initial;
+      const value = raw ? JSON.parse(raw) : initial;
+      return key === "velocity-settings" ? sanitizeSettings(value) : value;
     } catch {
       return initial;
     }
@@ -74,52 +83,28 @@ function useStored(key, initial) {
 const navItems = [
   { id: "home", label: "Inicio", icon: Home },
   { id: "themes", label: "Temas", icon: Palette },
+  { id: "customize", label: "Personalizar", icon: Settings2 },
   { id: "tools", label: "Herramientas", icon: LayoutGrid },
   { id: "downloads", label: "Descargas", icon: ArrowDownToLine },
 ];
-const emojis = [
-  "😊",
-  "💙",
-  "⚡",
-  "✨",
-  "🔥",
-  "🚀",
-  "😂",
-  "🥰",
-  "👍",
-  "🎉",
-  "🌈",
-  "👋",
-  "🤔",
-  "😎",
-  "🫶",
-  "❤️",
-  "🌸",
-  "💯",
-  "🙌",
-  "🌟",
-  "🍀",
-  "🎮",
-  "💬",
-  "🦋",
-];
+
 function App() {
   const [page, setPage] = useState("home");
   const [themeId, setThemeId] = useStored("velocity-theme", "velocity");
   const theme = themes.find((t) => t.id === themeId) || themes[0];
   const [favorites, setFavorites] = useStored("velocity-favorites", []);
-  const [settings, setSettings] = useStored("velocity-settings", {
-    hand: "full",
-    sound: false,
-    haptics: true,
-    suggestions: true,
-    fontSize: "normal",
-  });
+  const [settings, setSettings] = useStored(
+    "velocity-settings",
+    DEFAULT_SETTINGS,
+  );
+  const [background, setBackground] = useStored("velocity-background", "");
+
   const [history, setHistory] = useStored("velocity-downloads", []);
   const [notes, setNotes] = useStored("velocity-notes", []);
   const [text, setText] = useState("");
   const [shift, setShift] = useState(true);
   const [symbols, setSymbols] = useState(false);
+  const [symbolPage, setSymbolPage] = useState(0);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState("");
@@ -239,10 +224,7 @@ function App() {
     const end = el?.selectionEnd ?? text.length;
     const before =
       remove && start === end
-        ? Math.max(
-            0,
-            start - (Array.from(text.slice(0, start)).at(-1)?.length || 0),
-          )
+        ? Math.max(0, start - previousGraphemeLength(text.slice(0, start)))
         : start;
     const next = text.slice(0, before) + value + text.slice(end);
     setText(next);
@@ -310,9 +292,30 @@ function App() {
       setDownloading(false);
     }
   }
+  async function applyNativePersonalization() {
+    try {
+      await configureNativeKeyboard({ theme: themeId, ...settings });
+      await nativeKeyboard.setBackground({
+        data: background ? background.split(",")[1] : null,
+      });
+      notify(
+        "Diseño y comodidad aplicados al teclado Android. Vuelve a abrirlo para verlos.",
+      );
+    } catch {
+      notify(
+        "No se pudo aplicar la personalización. Revisa que usas la versión 1.0.0.",
+      );
+    }
+  }
   async function installApp() {
-    if (isNativeApp)
-      return notify("Ya estás usando la aplicación Android de Velocity.");
+    if (isNativeApp) {
+      try {
+        await nativeKeyboard.openSetup();
+      } catch {
+        notify("Instala la versión actual para configurar tu teclado.");
+      }
+      return;
+    }
     if (!installPrompt) return setModal("install");
     try {
       await installPrompt.prompt();
@@ -551,11 +554,17 @@ function App() {
 
   function renderKeyboardPreview() {
     const rows = symbols
-      ? [
-          ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-          ["@", "#", "€", "_", "&", "-", "+", "(", ")", "/"],
-          ["á", "é", "í", "ó", "ú", "ü", "!", "?"],
-        ]
+      ? symbolPage
+        ? [
+            ["[", "]", "{", "}", "<", ">", "€", "£", "¥", "¢"],
+            ["=", "*", "\\", "|", "~", "^", "°", "•", "©", "®"],
+            ["á", "é", "í", "ó", "ú", "ü", "ñ"],
+          ]
+        : [
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+            ["@", "#", "$", "%", "&", "-", "+", "(", ")", "/"],
+            ["_", '"', "'", ":", ";", "!", "?"],
+          ]
       : [
           ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
           ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"],
@@ -621,9 +630,30 @@ function App() {
         <div
           className={`keyboard-stage hand-${settings.hand}`}
           style={{
-            "--theme-color": theme.color,
-            "--theme-dark": theme.dark,
-            "--theme-accent": theme.accent,
+            "--theme-color": settings.customColors
+              ? settings.backgroundColor
+              : theme.color,
+            "--theme-dark": settings.customColors
+              ? settings.backgroundColor
+              : theme.dark,
+            "--theme-accent": settings.customColors
+              ? settings.accentColor
+              : theme.accent,
+            "--key-height": `${settings.keyHeight}px`,
+            "--key-gap": `${settings.keyGap}px`,
+            "--key-radius": `${settings.keyRadius}px`,
+            "--key-font": `${settings.keyTextSize}px`,
+            "--key-color":
+              (settings.customColors ? settings.keyColor : "#f4f7ff") +
+              Math.round(settings.keyOpacity * 2.55)
+                .toString(16)
+                .padStart(2, "0"),
+            "--key-ink": settings.customColors
+              ? readableInk(settings.keyColor)
+              : "#173359",
+            "--hand-width": `${settings.handWidth}%`,
+            "--keyboard-bottom": `${settings.bottomPadding}px`,
+            "--keyboard-photo": background ? `url(${background})` : "none",
           }}
         >
           {settings.hand !== "full" && (
@@ -674,14 +704,21 @@ function App() {
                 <Mic size={16} />
               </button>
             </div>
-            {emojiOpen ? (
-              <div className="emoji-picker">
-                {emojis.map((emoji) => (
-                  <button key={emoji} onClick={() => insert(emoji)}>
-                    {emoji}
+            {!emojiOpen && !symbols && settings.numberRow && (
+              <div className="key-row permanent-numbers">
+                {"1234567890".split("").map((key) => (
+                  <button className="key" key={key} onClick={() => insert(key)}>
+                    {key}
                   </button>
                 ))}
               </div>
+            )}
+            {emojiOpen ? (
+              <EmojiPicker
+                onInsert={insert}
+                remember={settings.rememberEmojis}
+                incognito={settings.incognito}
+              />
             ) : (
               <div className="key-rows">
                 {rows.map((row, i) => (
@@ -691,9 +728,17 @@ function App() {
                         className={`key function-key ${shift && !symbols ? "shift-on" : ""}`}
                         aria-label="Mayúsculas"
                         aria-pressed={shift}
-                        onClick={() => setShift(!shift)}
+                        onClick={() =>
+                          symbols
+                            ? setSymbolPage(1 - symbolPage)
+                            : setShift(!shift)
+                        }
                       >
-                        <ArrowUp size={17} />
+                        {symbols ? (
+                          `${symbolPage + 1}/2`
+                        ) : (
+                          <ArrowUp size={17} />
+                        )}
                       </button>
                     )}
                     {row.map((k) => (
@@ -867,7 +912,7 @@ function App() {
           </button>
           <div className="sidebar-footer">
             <span className="status-dot" /> Hecho para ser libre.
-            <span>v1.0</span>
+            <span>v1.0.0</span>
           </div>
         </div>
       </aside>
@@ -1010,6 +1055,22 @@ function App() {
                   <span className="art-number">01 / ∞</span>
                 </div>
               </section>
+              <div className="comfort-announcement">
+                <span>✦ NUEVO · VELOCITY 1.0.0</span>
+                <div>
+                  <strong>Un teclado que se siente mejor.</strong>
+                  <p>
+                    Más espacio para tus dedos. Todos tus emojis. Tu propio
+                    estilo.
+                  </p>
+                </div>
+                <button
+                  className="button primary"
+                  onClick={() => navigate("customize")}
+                >
+                  Personalizar mi teclado <ArrowRight size={16} />
+                </button>
+              </div>
               <div className="benefit-strip">
                 <span>
                   <Palette size={17} />
@@ -1120,6 +1181,46 @@ function App() {
                   <ArrowDownToLine size={16} />
                 </button>
               </section>
+            </>
+          )}
+          {page === "customize" && (
+            <>
+              <PageHeading
+                eyebrow="VELOCITY 1.0.0 · HECHO PARA TUS MANOS"
+                title="Cada detalle. A tu manera."
+                text="Más comodidad, menos esfuerzo. Diseña tu teclado y pruébalo al instante."
+              />
+              <div className="personalization-layout">
+                <CustomizationPanel
+                  settings={settings}
+                  onChange={(value) => setSettings(sanitizeSettings(value))}
+                  background={background}
+                  onBackground={setBackground}
+                  native={isNativeApp}
+                  onApply={applyNativePersonalization}
+                />
+                <div className="personalization-preview">
+                  {renderKeyboardPreview()}
+                  <div className="card comfort-information">
+                    <h3>Sin salir de tu ritmo.</h3>
+                    <p>
+                      Prueba el catálogo de 3.979 entradas de Unicode 17.0 desde
+                      ☺. Categorías, búsqueda en español, tonos, recientes y
+                      favoritos, sin conexión.
+                    </p>
+                    <button
+                      className="button secondary"
+                      onClick={() => setEmojiOpen(true)}
+                    >
+                      Explorar emojis →
+                    </button>
+                    <p>
+                      La web es un área de prueba. Para escribir en otras
+                      aplicaciones de Android, utiliza el teclado nativo.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </>
           )}
           {page === "themes" && (
@@ -1530,25 +1631,7 @@ function App() {
                             )
                               throw new Error();
                             setThemeId(config.theme);
-                            const s = config.settings || {};
-                            setSettings((prev) => ({
-                              ...prev,
-                              ...(typeof s.sound === "boolean"
-                                ? { sound: s.sound }
-                                : {}),
-                              ...(typeof s.haptics === "boolean"
-                                ? { haptics: s.haptics }
-                                : {}),
-                              ...(typeof s.suggestions === "boolean"
-                                ? { suggestions: s.suggestions }
-                                : {}),
-                              ...(["full", "right", "left"].includes(s.hand)
-                                ? { hand: s.hand }
-                                : {}),
-                              ...(["normal", "large"].includes(s.fontSize)
-                                ? { fontSize: s.fontSize }
-                                : {}),
-                            }));
+                            setSettings(sanitizeSettings(config.settings));
                             notify("Tema y configuración importados.");
                           } catch {
                             notify(
@@ -2113,13 +2196,12 @@ function App() {
                   <button
                     className="button danger"
                     onClick={() => {
-                      setSettings({
-                        hand: "full",
-                        sound: false,
-                        haptics: true,
-                        suggestions: true,
-                        fontSize: "normal",
-                      });
+                      setSettings({ ...DEFAULT_SETTINGS });
+                      setBackground("");
+                      try {
+                        localStorage.removeItem("velocity-emoji-recent");
+                        localStorage.removeItem("velocity-emoji-favorites");
+                      } catch {}
                       setThemeId("velocity");
                       setFavorites([]);
                       setHistory([]);
@@ -2208,12 +2290,7 @@ function AndroidDownloadBanner({ theme, settings }) {
                 className="text-link"
                 onClick={async () => {
                   try {
-                    await configureNativeKeyboard({
-                      theme,
-                      hand: settings.hand,
-                      sound: settings.sound,
-                      haptics: settings.haptics,
-                    });
+                    await configureNativeKeyboard({ theme, ...settings });
                     setMessage(
                       "Tema y ajustes copiados al teclado nativo. Vuelve a abrirlo para verlos.",
                     );

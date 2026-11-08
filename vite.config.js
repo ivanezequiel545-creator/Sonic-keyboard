@@ -14,6 +14,8 @@ export default defineConfig({
           "/icon.svg",
           "/icon-192.png",
           "/icon-512.png",
+          "/data/emojis-es.json",
+          "/licenses/emojibase.txt",
           ...Object.keys(bundle).map((name) => `/${name}`),
         ];
         this.emitFile({

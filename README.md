@@ -2,6 +2,29 @@
 
 Un teclado web y Android nativo, personalizable y en español. Creado desde cero sobre este repositorio con React y Vite, sin backend, cuentas, anuncios ni claves de API.
 
+## 1.0.0: comodidad y personalización
+
+Esta rama prepara la primera versión estable **1.0.0**; no confundir el número del código con una versión ya publicada. Añade teclas ajustables, perfiles de comodidad, fila numérica, foto privada, colores, cursor por espacio, borrado continuo y **3.979 entradas Unicode 17.0 en diez categorías**. El selector nativo usa celdas recicladas y carga fuera del hilo de UI; escribir letras no reconstruye el teclado.
+
+En la app abre **Personalizar**; en Android puedes usar también **Activar mi teclado → ajustes nativos**. El IME no guarda conversaciones ni lee automáticamente el portapapeles. Recientes/favoritos guardan únicamente IDs de emojis. Los recientes se suspenden en privado. La compatibilidad visual de emojis depende de la fuente del teléfono.
+
+**Publicación:** la APK de verificación es debug. La release estable requiere firma persistente protegida y revisión física; [procedimiento y lista de validación](docs/stable-release.md), [notas 1.0.0](docs/releases/1.0.0.md). Los enlaces de descarga conservan las alpha publicadas hasta completar la publicación real. No se ha sustituido un enlace por una APK inexistente.
+
+### Compilar y probar 1.0.0
+
+```sh
+npm ci
+npm test
+npm run android:sync
+npx playwright install chromium
+TEST_OFFLINE=1 CI=1 npm run test:e2e
+cd android
+./gradlew assembleDebug testDebugUnitTest lintDebug
+./gradlew connectedDebugAndroidTest # requiere dispositivo/emulador
+```
+
+El catálogo se regenera antes de cada build desde `emojibase-data@17.0.0` (MIT, licencia incluida); no descarga datos durante el uso. `npm run emoji:build` permite regenerarlo separadamente. En esta versión se usa una sola variante Android; las tres variantes de la siguiente sección pertenecen a las etiquetas históricas.
+
 ## Qué incluye
 
 - Teclado interactivo español QWERTY con `ñ`, mayúsculas, números, símbolos, vocales acentuadas, borrado, espacio y salto de línea.
@@ -50,7 +73,7 @@ Publica el contenido de `dist/` en la raíz de un dominio con HTTPS. El manifest
 - El service worker precarga HTML, JavaScript (incluido el generador ZIP), CSS, fuente e iconos. Los enlaces y servicios externos no están disponibles sin internet.
 - En desarrollo no se registra un service worker, para evitar servir versiones antiguas del código.
 
-## Tres APK preliminares para Android
+## Historial: tres APK preliminares para Android
 
 | Versión                                                                                          | Variante Gradle   | Alcance                                                            |
 | ------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------ |

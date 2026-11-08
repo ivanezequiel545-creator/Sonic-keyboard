@@ -8,4 +8,4 @@ cleanup() {
 }
 trap cleanup EXIT
 cd android
-bash ../scripts/gradle-ci.sh connectedImePreviewDebugAndroidTest --no-daemon -PvelocityBuildNumber="${GITHUB_RUN_NUMBER:-0}"
+bash ../scripts/gradle-ci.sh connectedDebugAndroidTest --no-daemon -PvelocityBuildNumber="${GITHUB_RUN_NUMBER:-0}"

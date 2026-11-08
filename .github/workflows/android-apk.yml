@@ -1,17 +1,21 @@
-name: Android · 3 prereleases
+name: Android · Velocity 1.0.0
 
 on:
   push:
-    branches: [arena/e155af27-sonic-keyboard]
+    branches: [arena/90b621fa-sonic-keyboard]
     paths-ignore: ["**.md"]
   workflow_dispatch:
     inputs:
+      device_verified:
+        description: He probado esta versión en un teléfono físico y confirmado la actualización
+        type: boolean
+        default: false
       diagnose_run:
         description: ID de una ejecución anterior para inspeccionar sus informes (no compila ni publica)
         type: string
         default: ""
       publish:
-        description: Publicar los tres APK como prelanzamientos después de las pruebas
+        description: Publicar 1.0.0 estable (requiere firma de producción y prueba física confirmada)
         type: boolean
         default: false
 
@@ -26,7 +30,12 @@ jobs:
   build:
     if: inputs.diagnose_run == ''
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 30
+    env:
+      VELOCITY_KEYSTORE_PATH: ${{ runner.temp }}/velocity.keystore
+      VELOCITY_STORE_PASSWORD: ${{ secrets.VELOCITY_STORE_PASSWORD }}
+      VELOCITY_KEY_ALIAS: ${{ secrets.VELOCITY_KEY_ALIAS }}
+      VELOCITY_KEY_PASSWORD: ${{ secrets.VELOCITY_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -45,6 +54,24 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: velocity-android-debug-key-${{ runner.os }}-v1
+      - name: Validate stable publication requirements
+        if: inputs.publish
+        env:
+          SIGNING_KEY: ${{ secrets.VELOCITY_KEYSTORE_BASE64 }}
+          DEVICE_VERIFIED: ${{ inputs.device_verified }}
+        run: |
+          test "$DEVICE_VERIFIED" = true || { echo "::error::Confirma primero las pruebas en un teléfono físico."; exit 1; }
+          test -n "$SIGNING_KEY" && test -n "$VELOCITY_STORE_PASSWORD" && test -n "$VELOCITY_KEY_ALIAS" && test -n "$VELOCITY_KEY_PASSWORD" || { echo "::error::Falta una firma de producción persistente. No se publica una APK debug como estable."; exit 1; }
+      - name: Restore protected signing key if configured
+        id: signing
+        env:
+          SIGNING_KEY: ${{ secrets.VELOCITY_KEYSTORE_BASE64 }}
+        run: |
+          if test -n "$SIGNING_KEY"; then
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$VELOCITY_KEYSTORE_PATH"
+            chmod 600 "$VELOCITY_KEYSTORE_PATH"
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          fi
       - run: npm ci
       - run: npm test
       - run: npm run android:sync
@@ -52,11 +79,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Web interface, release links and offline downloads
         run: TEST_OFFLINE=1 npm run test:e2e
-      - name: Compile all three APKs, native unit tests and IME lint
+      - name: Compile 1.0.0 verification APK, unit tests and lint
         working-directory: android
         run: |
           chmod +x gradlew
-          bash ../scripts/gradle-ci.sh assembleDebug testWebPreviewDebugUnitTest testPersonalPreviewDebugUnitTest testImePreviewDebugUnitTest lintImePreviewDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+          bash ../scripts/gradle-ci.sh assembleDebug testDebugUnitTest lintDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
       - name: Free hosted runner disk for emulator userdata
         run: |
           # Emulator 37 checks the image's minimum userdata size even when a
@@ -69,7 +96,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Test Alpha 3 as an actual keyboard in a separate app
+      - name: Test native keyboard, emoji catalogue and gestures in another app
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
@@ -80,17 +107,21 @@ jobs:
           target: default
           disable-animations: true
           script: bash scripts/test-android-ci.sh
+      - name: Build signed release when a protected key exists
+        if: steps.signing.outputs.ready == 'true'
+        working-directory: android
+        run: bash ../scripts/gradle-ci.sh assembleRelease --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
       - name: Prepare APKs and checksums
         run: |
-          for entry in '1 webPreview' '2 personalPreview' '3 imePreview'; do
-            read -r stage flavor <<< "$entry"
-            mkdir -p "apk/alpha-$stage"
-            cp "android/app/build/outputs/apk/$flavor/debug/app-$flavor-debug.apk" "apk/alpha-$stage/velocity-android.apk"
-            (cd "apk/alpha-$stage" && sha256sum velocity-android.apk > velocity-android.apk.sha256)
-          done
+          mkdir -p apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.0-verification.apk
+          if test -f android/app/build/outputs/apk/release/app-release.apk; then
+            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.0.apk
+          fi
+          (cd apk && for file in *.apk; do sha256sum "$file" > "$file.sha256"; done)
       - uses: actions/upload-artifact@v4
         with:
-          name: velocity-three-android-previews
+          name: velocity-1.0.0-apk
           path: apk/
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -101,12 +132,17 @@ jobs:
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
           retention-days: 14
-      - name: Publish three GitHub prereleases
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+      - name: Publish signed stable 1.0.0
+        if: github.event_name == 'workflow_dispatch' && inputs.publish && inputs.device_verified && steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: bash scripts/publish-previews.sh "$GITHUB_SHA"
+        run: |
+          test -s apk/velocity-1.0.0.apk
+          gh release create v1.0.0 --target "$GITHUB_SHA" --title 'Velocity 1.0.0' --notes-file docs/releases/1.0.0.md apk/velocity-1.0.0.apk apk/velocity-1.0.0.apk.sha256
+      - name: Remove private signing material
+        if: always()
+        run: rm -f "$VELOCITY_KEYSTORE_PATH"
 
   diagnostics:
     if: github.event_name == 'workflow_dispatch' && inputs.diagnose_run != ''

@@ -7,8 +7,13 @@ android {
         applicationId "app.velocity.keyboard"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode = (project.findProperty("velocityVersionCode") ?: "1").toInteger()
-        versionName = "1.0.${project.findProperty("velocityVersionCode") ?: "1"}"
+        // Numerically higher than the published 1.1.0-alpha.* APKs. Android
+        // compares versionCode, not the user-requested 1.0.0 versionName.
+        versionCode = 2000000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger()
+        versionName = "1.0.0"
+        buildConfigField "int", "PREVIEW_STAGE", "4"
+        resValue "bool", "velocity_ime_enabled", "true"
+        resValue "bool", "velocity_setup_enabled", "true"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,35 +22,20 @@ android {
         }
     }
     buildFeatures { buildConfig true }
-    flavorDimensions "preview"
-    productFlavors {
-        webPreview {
-            dimension "preview"
-            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 1
-            versionName = "1.1.0-alpha.1"
-            buildConfigField "int", "PREVIEW_STAGE", "1"
-            resValue "bool", "velocity_ime_enabled", "false"
-            resValue "bool", "velocity_setup_enabled", "false"
-        }
-        personalPreview {
-            dimension "preview"
-            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 2
-            versionName = "1.1.0-alpha.2"
-            buildConfigField "int", "PREVIEW_STAGE", "2"
-            resValue "bool", "velocity_ime_enabled", "false"
-            resValue "bool", "velocity_setup_enabled", "true"
-        }
-        imePreview {
-            dimension "preview"
-            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 3
-            versionName = "1.1.0-alpha.3"
-            buildConfigField "int", "PREVIEW_STAGE", "3"
-            resValue "bool", "velocity_ime_enabled", "true"
-            resValue "bool", "velocity_setup_enabled", "true"
+    signingConfigs {
+        stable {
+            if (System.getenv("VELOCITY_KEYSTORE_PATH") && System.getenv("VELOCITY_STORE_PASSWORD")) {
+                storeFile file(System.getenv("VELOCITY_KEYSTORE_PATH"))
+                storePassword System.getenv("VELOCITY_STORE_PASSWORD")
+                keyAlias System.getenv("VELOCITY_KEY_ALIAS")
+                keyPassword System.getenv("VELOCITY_KEY_PASSWORD")
+            }
         }
     }
     buildTypes {
+        debug { versionNameSuffix "-verification" }
         release {
+            if (System.getenv("VELOCITY_STORE_PASSWORD")) signingConfig signingConfigs.stable
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -59,6 +49,7 @@ repositories {
 }
 
 dependencies {
+    implementation "androidx.recyclerview:recyclerview:1.3.2"
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"

@@ -1,0 +1,160 @@
+import { test, expect } from "@playwright/test";
+async function customize(page) {
+  await page.goto("/");
+  if (
+    await page
+      .getByRole("button", { name: "Abrir menú", exact: true })
+      .isVisible()
+  )
+    await page.getByRole("button", { name: "Abrir menú", exact: true }).click();
+  await page
+    .locator(".sidebar")
+    .getByRole("button", { name: "Personalizar", exact: true })
+    .click();
+}
+test("comfortable presets change real geometry and persist after reload", async ({
+  page,
+}) => {
+  await customize(page);
+  await page.getByRole("button", { name: /Accesible Teclas y letras/ }).click();
+  await expect(
+    page.getByRole("slider", { name: "Altura de teclas", exact: true }),
+  ).toHaveValue("64");
+  await expect(
+    page.locator(".key-row").getByRole("button", { name: "Q", exact: true }),
+  ).toHaveCSS("height", "64px");
+  await page.reload();
+  await customize(page);
+  await expect(
+    page.getByRole("slider", { name: "Altura de teclas", exact: true }),
+  ).toHaveValue("64");
+  await page.getByRole("button", { name: /Compacto Recupera/ }).click();
+  await expect(page.locator(".permanent-numbers")).toHaveCount(0);
+  await page
+    .getByRole("checkbox", { name: "Fila de números permanente", exact: true })
+    .check();
+  await expect(page.locator(".permanent-numbers .key")).toHaveCount(10);
+});
+test("Spanish categories and tone variants are paginated without thousands of DOM buttons", async ({
+  page,
+}) => {
+  await customize(page);
+  await page.getByRole("button", { name: "Abrir emojis", exact: true }).click();
+  const library = page.getByRole("region", { name: "Catálogo de emojis" });
+  await expect(library.locator(".emoji-result-count")).toContainText("3979");
+  await expect(library.locator(".emoji-grid button")).toHaveCount(72);
+  await library
+    .getByRole("searchbox", { name: "Buscar emojis en español" })
+    .fill("corazón");
+  await expect(library.locator(".emoji-grid button").first()).toBeVisible();
+  await library.getByRole("searchbox").fill("");
+  await library.getByRole("button", { name: /Banderas/ }).click();
+  await library.getByRole("searchbox").fill("venezuela");
+  await library.getByRole("button", { name: "🇻🇪", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "Prueba el teclado" }),
+  ).toHaveValue("🇻🇪");
+  await library
+    .getByRole("button", { name: "☆ Guardar favorito", exact: true })
+    .click();
+  await library.getByRole("button", { name: /★ Favoritos/ }).click();
+  await library.getByRole("searchbox").fill("");
+  await expect(library.locator(".emoji-grid button")).toHaveCount(1);
+  await page
+    .getByRole("button", { name: "Volver a letras", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Borrar carácter", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Prueba el teclado" }),
+  ).toHaveValue("");
+});
+test("private mode does not record emoji choices; recoloring and photo removal work", async ({
+  page,
+}) => {
+  await customize(page);
+  await page
+    .getByRole("checkbox", {
+      name: "Modo privado · sin recientes",
+      exact: true,
+    })
+    .check();
+  await page.getByRole("button", { name: "Abrir emojis", exact: true }).click();
+  await page.getByRole("button", { name: "😊", exact: true }).click();
+  expect(
+    await page.evaluate(() => localStorage.getItem("velocity-emoji-recent")),
+  ).toBeNull();
+  await page.getByLabel("Color de teclas", { exact: true }).fill("#00ff00");
+  await page
+    .getByRole("button", { name: "Volver a letras", exact: true })
+    .click();
+  await expect(
+    page.locator(".key-row").getByRole("button", { name: "q", exact: true }),
+  ).toHaveCSS("color", "rgb(0, 0, 0)");
+  await page
+    .getByLabel("Imagen de fondo", { exact: true })
+    .setInputFiles({
+      name: "pixel.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7yQAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+  await expect(
+    page.getByRole("button", { name: "Quitar foto", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Quitar foto", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Quitar foto", exact: true }),
+  ).toHaveCount(0);
+});
+test("customization fits a narrow viewport at maximum comfort settings", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await customize(page);
+  await page.getByRole("button", { name: /Accesible Teclas y letras/ }).click();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("button", { name: "Abrir emojis", exact: true }).click();
+  await expect(
+    page.getByRole("region", { name: "Catálogo de emojis" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+test("emoji catalogue is available offline even if never opened while online", async ({
+  page,
+  context,
+}) => {
+  test.skip(!process.env.TEST_OFFLINE, "Production service worker required");
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller)
+      await new Promise((r) =>
+        navigator.serviceWorker.addEventListener("controllerchange", r, {
+          once: true,
+        }),
+      );
+  });
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByRole("button", { name: "Abrir emojis", exact: true }).click();
+  await expect(page.locator(".emoji-grid button")).toHaveCount(72);
+  await page
+    .getByRole("searchbox", { name: "Buscar emojis en español" })
+    .fill("venezuela");
+  await expect(
+    page.getByRole("button", { name: "🇻🇪", exact: true }),
+  ).toBeVisible();
+  await context.setOffline(false);
+});
