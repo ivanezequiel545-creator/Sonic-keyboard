@@ -14,6 +14,17 @@ public class InputProbeActivity extends Activity {
         EditText text = new EditText(this); text.setContentDescription("external-probe-text"); text.setHint("Texto"); text.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE); root.addView(text,new LinearLayout.LayoutParams(-1,120));
         EditText number = new EditText(this); number.setContentDescription("external-probe-number"); number.setHint("Número"); number.setInputType(InputType.TYPE_CLASS_NUMBER); root.addView(number,new LinearLayout.LayoutParams(-1,120));
         EditText password = new EditText(this); password.setContentDescription("external-probe-password"); password.setHint("Privado"); password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD); root.addView(password,new LinearLayout.LayoutParams(-1,120));
+        // This test host explicitly requests its IME, as a messaging app does.
+        // Do not depend on Android's remembered soft-input visibility between
+        // password, numeric and text editors or on accessibility click timing.
+        for (EditText editor : new EditText[]{text, number, password}) {
+            editor.setOnClickListener(view -> {
+                view.requestFocus();
+                view.post(() -> ((android.view.inputmethod.InputMethodManager)
+                    getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(view,
+                    android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT));
+            });
+        }
         setContentView(root);
     }
 }

@@ -168,8 +168,10 @@ jobs:
               if path.suffix == '.xml' and 'TEST-' in path.name:
                   root = ET.parse(path).getroot()
                   for failure in root.iter('failure'):
-                      message = ET.tostring(failure, encoding='unicode')[:3500].replace('%','%25').replace('\n','%0A').replace('\r','%0D')
-                      print('::error title=Native test failure::' + message)
+                      text = ET.tostring(failure, encoding='unicode')[:24000]
+                      for start in range(0,len(text),3300):
+                          message = text[start:start+3300].replace('%','%25').replace('\n','%0A').replace('\r','%0D')
+                          print('::error title=Native test failure ' + str(start) + '::' + message)
               if path.suffix == '.xml' and 'lint' in path.name:
                   root = ET.parse(path).getroot()
                   for issue in root.findall('issue'):

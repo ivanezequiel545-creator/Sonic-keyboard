@@ -150,8 +150,12 @@ public class NativeKeyboardTest {
       field = device.wait(Until.findObject(By.desc("external-probe-text")), 5000);
       assertNotNull(field);
       field.click();
-      assertTrue("Text editor should reopen the keyboard after password input",
-        device.wait(Until.hasObject(By.desc("Espacio")), 5000));
+      boolean reopened = device.wait(Until.hasObject(By.desc("Espacio")), 5000);
+      if (!reopened) {
+        java.io.ByteArrayOutputStream hierarchy = new java.io.ByteArrayOutputStream();
+        device.dumpWindowHierarchy(hierarchy);
+        fail("Text editor should reopen the keyboard after password input: " + hierarchy.toString("UTF-8"));
+      }
       device.wait(Until.findObject(By.desc("external-probe-text")), 5000).setText("abcdef");
       device.findObject(By.desc("Herramientas de edición")).click();
       device.findObject(By.text("Fin")).click();
