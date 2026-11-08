@@ -22,6 +22,7 @@ public class InputProbeActivity extends Activity {
         InputConnection base=super.onCreateInputConnection(info);
         if(!getIntent().getBooleanExtra("rich",false)||base==null||android.os.Build.VERSION.SDK_INT<25)return base;
         info.contentMimeTypes=new String[]{"image/png","image/gif","image/webp"};
+        final EditText receiver=this;
         return new InputConnectionWrapper(base,false) {
           @Override public boolean commitContent(InputContentInfo content,int flags,Bundle options) {
             boolean requested=false;
@@ -35,7 +36,7 @@ public class InputProbeActivity extends Activity {
               String mime=content.getDescription().getMimeType(0);
               boolean valid=count>=4&&((mime.equals("image/png")&&header[0]==(byte)137&&header[1]=='P')||(mime.equals("image/gif")&&header[0]=='G'&&header[1]=='I'));
               if(!valid)return false;
-              setText("recibido:"+mime);setSelection(length());return true;
+              receiver.setText("recibido:"+mime);receiver.setSelection(receiver.length());return true;
             } catch(Exception e) {
               return false;
             } finally {
