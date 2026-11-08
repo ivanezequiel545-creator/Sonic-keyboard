@@ -143,9 +143,15 @@ public class NativeKeyboardTest {
       );
       assertFalse(device.hasObject(By.desc("Emojis o letras")));
 
-      field = device.findObject(By.desc("external-probe-text"));
+      // The password editor can pan the first field off-screen. Dismiss the
+      // IME before targeting it again, rather than clicking stale/panned bounds.
+      device.pressBack();
+      device.waitForIdle();
+      field = device.wait(Until.findObject(By.desc("external-probe-text")), 5000);
+      assertNotNull(field);
       field.click();
-      assertTrue(device.wait(Until.hasObject(By.desc("Espacio")), 5000));
+      assertTrue("Text editor should reopen the keyboard after password input",
+        device.wait(Until.hasObject(By.desc("Espacio")), 5000));
       device.wait(Until.findObject(By.desc("external-probe-text")), 5000).setText("abcdef");
       device.findObject(By.desc("Herramientas de edición")).click();
       device.findObject(By.text("Fin")).click();
