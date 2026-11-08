@@ -5372,3 +5372,27 @@ main {
     transform: none;
   }
 }
+
+/* 1.0.1: a coherent, high-contrast expression panel, not a grey emoji sheet. */
+.emoji-library { background: linear-gradient(145deg, #edf4ff, #f3edff 60%, #e8faf6); border: 1px solid #c6d8ef; color: #263b5b; border-radius: 16px; }
+.emoji-search-row input, .emoji-search-row select { color: #263b5b; border-color: #adc4df; }
+.emoji-categories button { background: #fff; color: #345478; border-radius: 18px; border-color: #b5cbea; }
+.emoji-categories button.selected { color: #fff; background: #355ee0; border-color: #355ee0; box-shadow: 0 3px 9px #355ee02b; }
+.emoji-result-count, .emoji-compatibility { color: #425b7e; }
+.emoji-grid { gap: 5px; }
+.emoji-grid button { background: #ffffffb8; border: 1px solid #d2deef; border-radius: 11px; }
+.emoji-grid button:hover { background: #e0eaff; }
+.media-tabs { display: flex; gap: 6px; padding: 2px 0 12px; }
+.media-tabs button { flex: 1; border-radius: 12px; background: #fff; color: #2d4670; border: 1px solid #b6c9e7; padding: 10px 6px; font-size: 12px; font-weight: 650; }
+.media-tabs button[aria-selected="true"] { background: #355ee0; color: #fff; border-color: #355ee0; }
+.media-library p { font-size: 11px; line-height: 1.6; color: #314d70; margin: 0 0 10px; }
+.media-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-height: 280px; overflow: auto; }
+.media-grid button { min-width: 0; padding: 7px; border: 2px solid #d1deee; background: #ffffffb8; border-radius: 14px; color: #263b5b; }
+.media-grid button.selected { border-color: #355ee0; background: #e1ebff; }
+.media-grid img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 9px; }
+.media-grid span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.media-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.media-actions a, .media-actions button { background: #355ee0; color: #fff; border-radius: 10px; padding: 10px; font-size: 12px; text-decoration: none; }
+.media-library small { display: block; font-size: 10px; line-height: 1.6; color: #425b7e; }
+@media (prefers-reduced-motion: reduce) { .emoji-grid button:hover { transform: none; } }
+.media-animation { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #314d70; padding: 0 0 10px; }

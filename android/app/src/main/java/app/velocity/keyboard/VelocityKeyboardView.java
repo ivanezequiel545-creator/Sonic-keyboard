@@ -24,6 +24,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     void onHide();
 
     default void onSuggestion(String word) {}
+    default void onMedia(MediaRepository.Item item,boolean share) {}
 
     default void onMoveCursor(int delta) {}
 
@@ -42,6 +43,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   private int symbolPage, theme, keyColor, ink, accent, background, navigationBottom;
   private String actionLabel = "↵",
     emojiQuery = "";
+  private String mediaTab="emoji";
   private long lastSpace;
   private LinearLayout panel;
   private TextView searchLabel;
@@ -61,14 +63,15 @@ public final class VelocityKeyboardView extends LinearLayout {
     }
     // One subtree event after all three slots have changed. Accessibility
     // clients must not retain a partially updated sibling-button cache.
-    if(isAttachedToWindow()){
-      android.view.accessibility.AccessibilityEvent event=android.view.accessibility.AccessibilityEvent.obtain(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
-      event.setContentChangeTypes(android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
-      sendAccessibilityEventUnchecked(event);
-    }
+    if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
   }
 
 
+  @Override public void onInitializeAccessibilityEvent(android.view.accessibility.AccessibilityEvent event){
+    super.onInitializeAccessibilityEvent(event);
+    if(event.getEventType()==android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)
+      event.setContentChangeTypes(android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+  }
   public VelocityKeyboardView(Context context, Listener listener) {
     super(context);
     this.listener = listener;
@@ -94,6 +97,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     this.sensitive = sensitive;
     this.shifted = shifted;
     actionLabel = label;
+    mediaTab="emoji";
     capsLock = symbols = emojis = tools = searching = false;
     emojiQuery = "";
     lastSpace = 0;
@@ -178,6 +182,14 @@ public final class VelocityKeyboardView extends LinearLayout {
       return;
     }
     if (emojis && !sensitive && !numeric && !searching) {
+      if(privateMode())mediaTab="emoji";
+      LinearLayout tabs=new LinearLayout(getContext());PanelColors palette=new PanelColors(getContext());
+      for(String tab:privateMode()?new String[]{"emoji"}:new String[]{"emoji","gif","sticker"}){
+        Button choice=new Button(getContext());choice.setAllCaps(false);choice.setText(tab.equals("emoji")?"Emojis":tab.equals("gif")?"GIFs":"Stickers");choice.setTextSize(12);palette.chip(choice,tab.equals(mediaTab));choice.setOnClickListener(v->{mediaTab=tab;refresh();});tabs.addView(choice,new LayoutParams(0,dp(40),1));
+      }
+      panel.addView(tabs);
+      if(!mediaTab.equals("emoji")&&!privateMode())panel.addView(new MediaPanel(getContext(),mediaTab,(item,share)->listener.onMedia(item,share)));
+      else {
       panel.addView(
         new EmojiPanel(
           getContext(),
@@ -195,6 +207,7 @@ public final class VelocityKeyboardView extends LinearLayout {
           emojiQuery
         )
       );
+      }
       LinearLayout bottom = row(false);
       key(
         bottom,
@@ -208,10 +221,9 @@ public final class VelocityKeyboardView extends LinearLayout {
       ).setContentDescription("Emojis o letras");
       key(
         bottom,
-        "⌕",
+        mediaTab.equals("emoji")?"⌕":"⚙",
         () -> {
-          searching = true;
-          refresh();
+          if(mediaTab.equals("emoji")){searching = true;refresh();}else listener.onSettings();
         },
         1,
         true

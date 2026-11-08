@@ -1,0 +1,72 @@
+[
+  {
+    "id": "hola",
+    "label": "¡Hola!",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "hola.png"
+  },
+  {
+    "id": "gracias",
+    "label": "Gracias",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "gracias.png"
+  },
+  {
+    "id": "si",
+    "label": "¡Sí!",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "si.png"
+  },
+  {
+    "id": "no",
+    "label": "Hoy no",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "no.png"
+  },
+  {
+    "id": "vamos",
+    "label": "¡Vamos!",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "vamos.png"
+  },
+  {
+    "id": "genial",
+    "label": "Genial",
+    "kind": "sticker",
+    "mime": "image/png",
+    "file": "genial.png"
+  },
+  {
+    "id": "hola-gif",
+    "label": "¡Hola! animado",
+    "kind": "gif",
+    "mime": "image/gif",
+    "file": "hola.gif"
+  },
+  {
+    "id": "gracias-gif",
+    "label": "Gracias animado",
+    "kind": "gif",
+    "mime": "image/gif",
+    "file": "gracias.gif"
+  },
+  {
+    "id": "si-gif",
+    "label": "¡Sí! animado",
+    "kind": "gif",
+    "mime": "image/gif",
+    "file": "si.gif"
+  },
+  {
+    "id": "no-gif",
+    "label": "Hoy no animado",
+    "kind": "gif",
+    "mime": "image/gif",
+    "file": "no.gif"
+  }
+]

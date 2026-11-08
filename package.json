@@ -13,7 +13,7 @@
     "android:open": "cap open android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
     "emoji:build": "node scripts/build-emoji-catalog.mjs",
-    "prebuild": "npm run emoji:build"
+    "prebuild": "npm run emoji:build && node scripts/sync-media.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.10",

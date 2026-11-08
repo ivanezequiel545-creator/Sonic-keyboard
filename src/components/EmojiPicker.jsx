@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import MediaPicker, { MediaTabs } from "./MediaPicker.jsx";
 import { filterEmojis } from "../preferences.js";
 let cached;
 export function loadEmojiCatalog() {
@@ -17,6 +18,7 @@ export default function EmojiPicker({
   remember = true,
   incognito = false,
 }) {
+  const [mediaMode, setMediaMode] = useState("emoji");
   const [catalog, setCatalog] = useState(null),
     [error, setError] = useState(""),
     [query, setQuery] = useState(""),
@@ -98,8 +100,10 @@ export default function EmojiPicker({
   }
   const size = 72,
     pages = Math.max(1, Math.ceil(matches.length / size));
+  if (mediaMode !== "emoji") return <section className="emoji-library" aria-label="Catálogo de emojis"><MediaTabs value={mediaMode} onChange={setMediaMode} /><MediaPicker kind={mediaMode} /></section>;
   return (
     <section className="emoji-library" aria-label="Catálogo de emojis">
+      <MediaTabs value={mediaMode} onChange={setMediaMode} />
       <div className="emoji-search-row">
         <input
           aria-label="Buscar emojis en español"

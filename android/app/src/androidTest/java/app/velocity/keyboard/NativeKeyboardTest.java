@@ -273,6 +273,104 @@ public class NativeKeyboardTest {
     }
   }
 
+  @Test(timeout=90000)
+  public void sendsRealStickersAndGifsToAnotherApp() throws Exception {
+    Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+    String previous=shell("settings get secure default_input_method"),component="app.velocity.keyboard/.VelocityInputMethodService";
+    String testPackage=InstrumentationRegistry.getInstrumentation().getContext().getPackageName();boolean incognito=KeyboardPreferences.flag(context,"incognito");
+    try{
+      KeyboardPreferences.get(context).edit().putBoolean("incognito",false).commit();
+      shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
+      shell("am start -W -n "+testPackage+"/app.velocity.keyboard.InputProbeActivity -f 0x10008000 --ez rich true");
+      device.wait(Until.findObject(By.desc("external-probe-text")),10000).click();
+      device.wait(Until.findObject(By.desc("Emojis o letras")),5000).click();
+      device.wait(Until.findObject(By.text("Stickers")),5000).click();
+      device.wait(Until.findObject(By.desc("Enviar sticker: ¡Hola!")),10000).click();
+      assertTrue(device.wait(Until.hasObject(By.text("recibido:image/png").desc("external-probe-text")),5000));
+      if(!device.hasObject(By.text("GIFs")))device.findObject(By.desc("Emojis o letras")).click();
+      device.wait(Until.findObject(By.text("GIFs")),5000).click();
+      device.wait(Until.findObject(By.desc("Enviar gif: ¡Hola! animado")),10000).click();
+      assertTrue(device.wait(Until.hasObject(By.text("recibido:image/gif").desc("external-probe-text")),5000));
+      device.pressBack();
+      device.wait(Until.findObject(By.desc("external-probe-password")),5000).click();
+      assertFalse(device.hasObject(By.text("GIFs")));assertFalse(device.hasObject(By.text("Stickers")));
+    }finally{
+      KeyboardPreferences.get(context).edit().putBoolean("incognito",incognito).commit();
+      if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
+    }
+  }
+
+  @Test public void offlineMediaImportsAreBoundedAndThemeHasContrast() throws Exception {
+    Context target=InstrumentationRegistry.getInstrumentation().getTargetContext();
+    Context isolated=new android.content.ContextWrapper(target){
+      @Override public java.io.File getFilesDir(){return new java.io.File(target.getCacheDir(),"media-test-files");}
+      @Override public java.io.File getCacheDir(){return new java.io.File(target.getCacheDir(),"media-test-cache");}
+    };
+    MediaRepository.clearImports(isolated);
+    java.util.List<MediaRepository.Item> initial=MediaRepository.list(isolated);assertEquals(10,initial.size());
+    try{
+      try(java.io.InputStream in=target.getAssets().open("media/hola.png")){MediaRepository.importImage(isolated,in);}
+      assertEquals(11,MediaRepository.list(isolated).size());
+      try{MediaRepository.importImage(isolated,new java.io.ByteArrayInputStream(new byte[MediaRepository.MAX_BYTES+1]));fail("Oversized media accepted");}catch(java.io.IOException expected){}
+      try{MediaRepository.importImage(isolated,new java.io.ByteArrayInputStream("not an image".getBytes("UTF-8")));fail("Invalid media accepted");}catch(java.io.IOException expected){}
+      assertNotNull(MediaRepository.thumbnail(isolated,initial.get(0)));
+      assertTrue(MediaRepository.stage(isolated,initial.get(0)).length()>100);
+      android.view.inputmethod.EditorInfo editor=new android.view.inputmethod.EditorInfo();
+      assertFalse(VelocityInputMethodService.supportsMedia(editor,"image/png"));
+      androidx.core.view.inputmethod.EditorInfoCompat.setContentMimeTypes(editor,new String[]{"image/*"});
+      assertTrue(VelocityInputMethodService.supportsMedia(editor,"image/gif"));assertFalse(VelocityInputMethodService.supportsMedia(editor,"video/mp4"));
+      for(int color:new int[]{0xff163db8,0xfff3f6fc,0xffff00ff,0xff777777,0xff000000})assertTrue(androidx.core.graphics.ColorUtils.calculateContrast(PanelColors.foreground(color),color)>=4.5);
+    }finally{MediaRepository.clearImports(isolated);}
+    assertEquals(10,MediaRepository.list(isolated).size());
+  }
+
+  private void tapWithoutAccessibility(android.app.UiAutomation automation,android.graphics.Point point){
+    long time=android.os.SystemClock.uptimeMillis();
+    android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,point.x,point.y,0);
+    android.view.MotionEvent up=android.view.MotionEvent.obtain(time,time+40,android.view.MotionEvent.ACTION_UP,point.x,point.y,0);
+    try{assertTrue(automation.injectInputEvent(down,true));assertTrue(automation.injectInputEvent(up,true));}finally{down.recycle();up.recycle();}
+    android.os.SystemClock.sleep(250);
+  }
+
+  @Test(timeout=90000)
+  public void typingAndReopeningWorkWithoutAnAccessibilityService() throws Exception {
+    if(android.os.Build.VERSION.SDK_INT<24)return;
+    android.app.Instrumentation instrumentation=InstrumentationRegistry.getInstrumentation();
+    Context context=instrumentation.getTargetContext();
+    UiDevice device=UiDevice.getInstance(instrumentation);
+    String previous=shell("settings get secure default_input_method"),component="app.velocity.keyboard/.VelocityInputMethodService";
+    String testPackage=instrumentation.getContext().getPackageName();
+    boolean suggestions=KeyboardPreferences.flag(context,"suggestions"),incognito=KeyboardPreferences.flag(context,"incognito");
+    try{
+      KeyboardPreferences.get(context).edit().putBoolean("suggestions",true).putBoolean("incognito",false).commit();
+      shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
+      shell("am start -W -n "+testPackage+"/app.velocity.keyboard.InputProbeActivity -f 0x10008000 --ez suggestions true");
+      UiObject2 field=device.wait(Until.findObject(By.desc("external-probe-text")),10000);field.click();
+      android.graphics.Point fieldPoint=field.getVisibleCenter();
+      android.graphics.Point[] points=new android.graphics.Point[4];String[] letters={"h","o","l","a"};
+      for(int j=0;j<4;j++)points[j]=device.wait(Until.findObject(By.text(letters[j])),5000).getVisibleCenter();
+      // Ordinary UiAutomator tests enable accessibility and masked this crash.
+      // Retain the no-accessibility automation object: no UiDevice calls here.
+      android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
+      android.view.accessibility.AccessibilityManager manager=(android.view.accessibility.AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+      long deadline=android.os.SystemClock.uptimeMillis()+5000;
+      while(manager.isEnabled()&&android.os.SystemClock.uptimeMillis()<deadline)android.os.SystemClock.sleep(50);
+      assertFalse("Regression must run with accessibility disabled",manager.isEnabled());
+      for(android.graphics.Point point:points)tapWithoutAccessibility(automation,point);
+      automation.injectInputEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN,android.view.KeyEvent.KEYCODE_BACK),true);
+      automation.injectInputEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP,android.view.KeyEvent.KEYCODE_BACK),true);
+      android.os.SystemClock.sleep(400);tapWithoutAccessibility(automation,fieldPoint);android.os.SystemClock.sleep(500);
+      for(android.graphics.Point point:points)tapWithoutAccessibility(automation,point);
+      instrumentation.getUiAutomation(0);
+      assertTrue(device.wait(Until.hasObject(By.text("holahola").desc("external-probe-text")),5000));
+      assertTrue(device.hasObject(By.text("q")));
+    }finally{
+      instrumentation.getUiAutomation(0);
+      KeyboardPreferences.get(context).edit().putBoolean("suggestions",suggestions).putBoolean("incognito",incognito).commit();
+      if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
+    }
+  }
+
   private UiObject2 waitForSuggestion(UiDevice device,String word) throws Exception {
     UiObject2 result=device.wait(Until.findObject(By.desc("Usar sugerencia: "+word)),10000);
     if(result==null){ByteArrayOutputStream tree=new ByteArrayOutputStream();device.dumpWindowHierarchy(tree);fail("Missing Spanish suggestion '"+word+"'; "+VelocityInputMethodService.suggestionDiagnostics+": "+tree.toString("UTF-8"));}

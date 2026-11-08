@@ -17,8 +17,9 @@ public final class VelocityInputMethodService
 
   private VelocityKeyboardView keyboard;
   private volatile EditorInfo editor;
-  private boolean sensitive;
+  private volatile boolean sensitive;
   private final android.os.Handler suggestionHandler=new android.os.Handler(android.os.Looper.getMainLooper());
+  private final android.os.Handler mediaHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   private volatile int suggestionGeneration;
   private int cursor=-1,undoCursor=-1;
   static volatile String suggestionDiagnostics="not started"; // Test-only counts, never words or editor contents.
@@ -30,7 +31,7 @@ public final class VelocityInputMethodService
     int variation=type&InputType.TYPE_MASK_VARIATION;
     return variation!=InputType.TYPE_TEXT_VARIATION_PASSWORD&&variation!=InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD&&variation!=InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD&&variation!=InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS&&variation!=InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS&&variation!=InputType.TYPE_TEXT_VARIATION_URI&&variation!=InputType.TYPE_TEXT_VARIATION_PERSON_NAME;
   }
-  private boolean canSuggest(){return editor!=null&&!sensitive&&KeyboardPreferences.flag(this,"suggestions")&&acceptsSuggestions(editor.inputType,editor.imeOptions,KeyboardPreferences.flag(this,"incognito"));}
+  private boolean canSuggest(){EditorInfo info=editor;return info!=null&&!sensitive&&KeyboardPreferences.flag(this,"suggestions")&&acceptsSuggestions(info.inputType,info.imeOptions,KeyboardPreferences.flag(this,"incognito"));}
   private boolean canAutoCorrect(){if(!canSuggest()||!KeyboardPreferences.flag(this,"autocorrect"))return false;int variation=editor.inputType&InputType.TYPE_MASK_VARIATION;return variation==InputType.TYPE_TEXT_VARIATION_NORMAL||variation==InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE||variation==InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE||variation==InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT;}
   private void stopSuggestions(){suggestionGeneration++;suggestionHandler.removeCallbacksAndMessages(null);candidateWord="";lastCandidates=java.util.Collections.emptyList();if(keyboard!=null)keyboard.updateCandidates(lastCandidates);}
   private void requestSuggestions(){
@@ -45,6 +46,7 @@ public final class VelocityInputMethodService
       // visible while querying; lastCandidates is already invalidated above.
       EmojiRepository.IO.execute(()->{
         if(generation!=suggestionGeneration||!canSuggest())return;
+        try{
         CharSequence selected=connection.getSelectedText(0);
         CharSequence after=connection.getTextAfterCursor(1,0);
         CharSequence before=connection.getTextBeforeCursor(80,0);
@@ -59,6 +61,7 @@ public final class VelocityInputMethodService
             if(BuildConfig.DEBUG)suggestionDiagnostics+=", "+keyboard.candidateDiagnostics();
           });
         }catch(java.io.IOException ignored){/* Typing still works without the local index. */}
+        }catch(RuntimeException ignored){/* An editor that disconnects must not kill the IME. */}
       });
     },60);
   }
@@ -76,6 +79,43 @@ public final class VelocityInputMethodService
     clearUndo();connection.beginBatchEdit();try{if(current.length()>0&&!connection.deleteSurroundingText(current.length(),0))return;CharSequence after=connection.getTextAfterCursor(1,0);boolean hasSpace=after!=null&&after.length()>0&&after.charAt(0)==' ';connection.commitText(word+(hasSpace?"":" "),hasSpace?2:1);}finally{connection.endBatchEdit();}requestSuggestions();
   }
 
+
+  private boolean canSendMedia(){
+    return editor!=null&&!sensitive&&!KeyboardPreferences.flag(this,"incognito")&&(editor.imeOptions&0x1000000)==0&&(editor.inputType&InputType.TYPE_MASK_CLASS)==InputType.TYPE_CLASS_TEXT&&acceptsSuggestions(editor.inputType&~(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS|InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE),editor.imeOptions,false);
+  }
+  static boolean supportsMedia(EditorInfo info,String mime){
+    for(String accepted:androidx.core.view.inputmethod.EditorInfoCompat.getContentMimeTypes(info))if(android.content.ClipDescription.compareMimeTypes(mime,accepted))return true;
+    return false;
+  }
+  @Override public void onMedia(MediaRepository.Item item,boolean share){
+    if(!canSendMedia())return;
+    final EditorInfo target=editor;final InputConnection connection=getCurrentInputConnection();
+    if(connection==null)return;
+    if(!share&&!supportsMedia(target,item.mime)){
+      android.widget.Toast.makeText(this,"Esta app no admite esta imagen desde el teclado. Mantén pulsado para compartir.",android.widget.Toast.LENGTH_LONG).show();return;
+    }
+    EmojiRepository.IO.execute(()->{
+      try{
+        java.io.File file=MediaRepository.stage(this,item);
+        android.net.Uri uri=androidx.core.content.FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
+        mediaHandler.post(()->{
+          if(editor!=target||!canSendMedia()||!isInputViewShown())return;
+          try{
+            if(share){
+              Intent intent=new Intent(Intent.ACTION_SEND).setType(item.mime).putExtra(Intent.EXTRA_STREAM,uri).setClipData(android.content.ClipData.newUri(getContentResolver(),item.label,uri)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+              startActivity(Intent.createChooser(intent,"Compartir "+item.label).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }else{
+              boolean legacy=android.os.Build.VERSION.SDK_INT<25;
+              if(legacy)grantUriPermission(target.packageName,uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
+              androidx.core.view.inputmethod.InputContentInfoCompat content=new androidx.core.view.inputmethod.InputContentInfoCompat(uri,new android.content.ClipDescription(item.label,new String[]{item.mime}),null);
+              boolean sent=androidx.core.view.inputmethod.InputConnectionCompat.commitContent(connection,target,content,legacy?0:androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,null);
+              if(!sent){if(legacy)revokeUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);android.widget.Toast.makeText(this,"La app rechazó la imagen. Mantén pulsado para compartir.",android.widget.Toast.LENGTH_LONG).show();}
+            }
+          }catch(RuntimeException e){android.widget.Toast.makeText(this,"No se pudo enviar. Prueba compartir manteniendo pulsado.",android.widget.Toast.LENGTH_LONG).show();}
+        });
+      }catch(java.io.IOException e){mediaHandler.post(()->android.widget.Toast.makeText(this,"No se pudo abrir la imagen local.",android.widget.Toast.LENGTH_SHORT).show());}
+    });
+  }
 
   @Override
   public View onCreateInputView() {
@@ -328,7 +368,7 @@ public final class VelocityInputMethodService
     requestHideSelf(0);
   }
 
-  @Override public void onDestroy(){clearUndo();stopSuggestions();super.onDestroy();}
+  @Override public void onDestroy(){clearUndo();stopSuggestions();mediaHandler.removeCallbacksAndMessages(null);super.onDestroy();}
 
   @Override
   public void onFinishInput() {

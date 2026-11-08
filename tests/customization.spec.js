@@ -168,3 +168,22 @@ test("Spanish suggestion strip completes the word at the caret and respects priv
  await page.locator('.suggestions').getByRole('button',{name:'hola',exact:true}).click();await expect(input).toHaveValue('hola mundo');
  await page.getByRole('checkbox',{name:'Modo privado · sin recientes',exact:true}).check();await expect(page.locator('.suggestions button')).toHaveCount(0);
 });
+
+test("offline GIF and sticker pack is available before first use and downloads the real file",async({page,context})=>{
+ test.skip(!process.env.TEST_OFFLINE,"Production service worker required");
+ await page.goto('/');await page.evaluate(async()=>{await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(resolve=>navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true}));});
+ await context.setOffline(true);await page.reload();
+ await page.getByRole('button',{name:'Abrir emojis',exact:true}).click();
+ await page.getByRole('tab',{name:'Stickers',exact:true}).click();
+ await expect(page.locator('.media-grid button')).toHaveCount(6);
+ await page.getByRole('button',{name:'Seleccionar ¡Hola!',exact:true}).click();
+ const download=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar sticker',exact:true}).click();expect((await download).suggestedFilename()).toBe('hola.png');
+ await page.getByRole('tab',{name:'GIFs',exact:true}).click();await expect(page.locator('.media-grid button')).toHaveCount(4);
+ await page.getByRole('checkbox',{name:'Animar miniaturas GIF'}).check();
+ await expect(page.locator('.media-grid img').first()).toHaveAttribute('src','/media/hola.gif');
+ expect(await page.locator('.media-grid img').first().evaluate(img=>img.complete&&img.naturalWidth===240)).toBe(true);
+ await page.getByRole('button',{name:'Seleccionar ¡Hola! animado',exact:true}).click();
+ const gif=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar GIF',exact:true}).click();expect((await gif).suggestedFilename()).toBe('hola.gif');
+ await page.getByRole('tab',{name:'Emojis',exact:true}).click();await expect(page.locator('.emoji-grid button')).toHaveCount(72);
+ await context.setOffline(false);
+});

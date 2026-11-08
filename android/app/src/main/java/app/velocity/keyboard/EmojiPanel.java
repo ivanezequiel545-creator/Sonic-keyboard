@@ -19,6 +19,7 @@ public final class EmojiPanel extends LinearLayout {
   }
 
   private final Listener listener;
+  private final PanelColors colors;
   private EmojiRepository.Catalog catalog;
   private final RecyclerView grid;
   private final TextView summary;
@@ -37,14 +38,17 @@ public final class EmojiPanel extends LinearLayout {
   public EmojiPanel(Context c, Listener listener, String initialQuery) {
     super(c);
     this.listener = listener;
+    colors=new PanelColors(c);
     query = initialQuery;
     setOrientation(VERTICAL);
-    setBackgroundColor(0xfff3f6fc);
+    setBackgroundColor(colors.surface);
+    setPadding(dp(6),dp(6),dp(6),dp(4));
     LinearLayout filters = new LinearLayout(c);
     Button search = new Button(c);
     search.setAllCaps(false);
     search.setText(query.isEmpty() ? "⌕ Buscar emojis" : query);
     search.setTextSize(12);
+    colors.chip(search,false);
     search.setContentDescription("Buscar emojis en español");
     search.setOnClickListener(v -> listener.search());
     filters.addView(search, new LayoutParams(0, dp(44), 1));
@@ -65,7 +69,10 @@ public final class EmojiPanel extends LinearLayout {
         c,
         android.R.layout.simple_spinner_dropdown_item,
         labels
-      )
+      ){
+        @Override public View getView(int position,View convert,ViewGroup parent){View v=super.getView(position,convert,parent);if(v instanceof TextView){((TextView)v).setTextColor(colors.ink);((TextView)v).setTextSize(11);}v.setBackgroundColor(colors.surface);return v;}
+        @Override public View getDropDownView(int position,View convert,ViewGroup parent){View v=super.getDropDownView(position,convert,parent);if(v instanceof TextView)((TextView)v).setTextColor(colors.ink);v.setBackgroundColor(colors.surface);return v;}
+      }
     );
     tones.setContentDescription("Tono de piel");
     filters.addView(tones, new LayoutParams(dp(145), dp(44)));
@@ -88,7 +95,7 @@ public final class EmojiPanel extends LinearLayout {
     summary = new TextView(c);
     summary.setText("Cargando catálogo local…");
     summary.setTextSize(10);
-    summary.setTextColor(0xff657692);
+    summary.setTextColor(colors.muted);
     summary.setPadding(dp(10), dp(4), dp(10), dp(4));
     addView(summary);
     grid = new RecyclerView(c);
@@ -134,6 +141,8 @@ public final class EmojiPanel extends LinearLayout {
     button.setText(label);
     button.setTextSize(10);
     button.setAllCaps(false);
+    button.setTag(id);
+    colors.chip(button,id.equals(category));
     button.setOnClickListener(v -> {
       category = id;
       filter();
@@ -143,6 +152,9 @@ public final class EmojiPanel extends LinearLayout {
 
   private void filter() {
     if (catalog == null) return;
+    for(int i=0;i<categories.getChildCount();i++){
+      TextView button=(TextView)categories.getChildAt(i);colors.chip(button,category.equals(button.getTag()));button.setSelected(category.equals(button.getTag()));
+    }
     matches.clear();
     List<String> ids = "recent".equals(category)
       ? EmojiRepository.ids(getContext(), "emojiRecent")
@@ -206,9 +218,8 @@ public final class EmojiPanel extends LinearLayout {
       TextView text = new TextView(getContext());
       text.setTextSize(25);
       text.setGravity(Gravity.CENTER);
-      text.setTextColor(Color.BLACK);
-      text.setBackgroundResource(android.R.drawable.list_selector_background);
-      text.setLayoutParams(new ViewGroup.LayoutParams(-1, dp(46)));
+      colors.chip(text,false);
+      RecyclerView.LayoutParams cell=new RecyclerView.LayoutParams(-1,dp(46));cell.setMargins(dp(2),dp(2),dp(2),dp(2));text.setLayoutParams(cell);
       return new Cell(text);
     }
 

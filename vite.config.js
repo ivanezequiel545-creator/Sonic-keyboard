@@ -1,5 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
+const media = JSON.parse(readFileSync(new URL("./public/media/catalog.json", import.meta.url), "utf8"));
 
 export default defineConfig({
   plugins: [
@@ -18,6 +20,8 @@ export default defineConfig({
           "/data/es-words.json",
           "/licenses/spanish-words.txt",
           "/licenses/emojibase.txt",
+          "/media/catalog.json",
+          ...media.map(item => `/media/${item.file}`),
           ...Object.keys(bundle).map((name) => `/${name}`),
         ];
         this.emitFile({
