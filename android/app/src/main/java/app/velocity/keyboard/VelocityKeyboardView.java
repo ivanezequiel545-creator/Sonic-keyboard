@@ -50,7 +50,19 @@ public final class VelocityKeyboardView extends LinearLayout {
   private List<String> candidateWords=Collections.emptyList();
   public void setPredictionsAllowed(boolean allowed){predictionsAllowed=allowed;}
   public void updateCandidates(List<String> words){candidateWords=new ArrayList<>(words);paintCandidates();}
-  private void paintCandidates(){for(int i=0;i<candidateButtons.size();i++){Button button=candidateButtons.get(i);String word=i<candidateWords.size()?candidateWords.get(i):"";button.setText(word);button.setEnabled(!word.isEmpty());button.setContentDescription(word.isEmpty()?"Sugerencia vacía":"Usar sugerencia: "+word);button.setTypeface(null,i==1?Typeface.BOLD:Typeface.NORMAL);}}
+  String candidateDiagnostics(){StringBuilder result=new StringBuilder("buttons="+candidateButtons.size()+"; lengths=");for(Button button:candidateButtons)result.append(button.getText().length()).append(',');return result.toString();}
+  private void paintCandidates(){
+    List<String> snapshot=new ArrayList<>(candidateWords);
+    for(int i=0;i<candidateButtons.size();i++){
+      Button button=candidateButtons.get(i);String word=i<snapshot.size()?snapshot.get(i):"";
+      button.setText(word);button.setEnabled(!word.isEmpty());
+      button.setContentDescription(word.isEmpty()?"Sugerencia vacía":"Usar sugerencia: "+word);
+      button.setTypeface(null,i==1?Typeface.BOLD:Typeface.NORMAL);
+    }
+    // One subtree event after all three slots have changed. Accessibility
+    // clients must not retain a partially updated sibling-button cache.
+    if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+  }
 
 
   public VelocityKeyboardView(Context context, Listener listener) {

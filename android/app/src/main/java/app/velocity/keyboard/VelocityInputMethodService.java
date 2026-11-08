@@ -56,6 +56,7 @@ public final class VelocityInputMethodService
           suggestionHandler.post(()->{
             if(generation!=suggestionGeneration||!canSuggest()||keyboard==null)return;
             candidateWord=word;lastCandidates=result;keyboard.updateCandidates(result);
+            if(BuildConfig.DEBUG)suggestionDiagnostics+=", "+keyboard.candidateDiagnostics();
           });
         }catch(java.io.IOException ignored){/* Typing still works without the local index. */}
       });

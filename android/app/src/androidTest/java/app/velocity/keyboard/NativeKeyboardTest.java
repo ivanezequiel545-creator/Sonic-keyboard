@@ -385,6 +385,13 @@ public class NativeKeyboardTest {
       q.performClick();
       assertSame(q, findButton(view, "q"));
       assertEquals("qqQ", typed.toString());
+      view.setPredictionsAllowed(true);view.startEditor(false,false,false,"↵");
+      android.widget.Button stableQ=findButton(view,"q");
+      view.updateCandidates(java.util.Arrays.asList("hola","gracias","bien"));
+      assertNotNull(findButton(view,"gracias"));
+      view.updateCandidates(java.util.Arrays.asList("holaa","hola","holas"));
+      assertNotNull(findButton(view,"holaa"));assertNotNull(findButton(view,"hola"));assertNotNull(findButton(view,"holas"));
+      assertNull(findButton(view,"gracias"));assertSame(stableQ,findButton(view,"q"));
       int originalPadding = KeyboardPreferences.number(context, "bottomPadding");
       try {
         KeyboardPreferences.get(context).edit().putInt("bottomPadding", 22).commit();
