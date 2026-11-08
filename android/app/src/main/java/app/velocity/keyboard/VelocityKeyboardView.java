@@ -61,7 +61,11 @@ public final class VelocityKeyboardView extends LinearLayout {
     }
     // One subtree event after all three slots have changed. Accessibility
     // clients must not retain a partially updated sibling-button cache.
-    if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+    if(isAttachedToWindow()){
+      android.view.accessibility.AccessibilityEvent event=android.view.accessibility.AccessibilityEvent.obtain(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+      event.setContentChangeTypes(android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+      sendAccessibilityEventUnchecked(event);
+    }
   }
 
 
