@@ -359,13 +359,12 @@ public class NativeKeyboardTest {
       for(int j=0;j<4;j++)points[j]=device.wait(Until.findObject(By.text(letters[j])),5000).getVisibleCenter();
       // Ordinary UiAutomator tests enable accessibility and masked this crash.
       // Retain the no-accessibility automation object: no UiDevice calls here.
-      // Fully disconnect the old accessibility-backed automation before
-      // creating the input-only connection. Switching flags in-place can leave
-      // the old service registered on API 31. Never skip the disabled assertion.
+      // Clear regular accessibility services before the framework switches to
+      // the input-only connection. Restore the original settings in finally;
+      // never skip the assertion that accessibility is actually disabled.
       // shell() obtains the default automation: finish all shell setup first.
       shell("settings put secure enabled_accessibility_services ''");
       shell("settings put secure accessibility_enabled 0");
-      instrumentation.getUiAutomation().destroy();
       android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
       android.view.accessibility.AccessibilityManager manager=(android.view.accessibility.AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
       long deadline=android.os.SystemClock.uptimeMillis()+5000;
