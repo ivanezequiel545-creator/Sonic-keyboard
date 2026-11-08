@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: velocity-android-${{ github.ref }}
+  group: velocity-android-${{ github.ref }}-${{ inputs.diagnose_run || 'build' }}
   cancel-in-progress: false
 
 jobs:

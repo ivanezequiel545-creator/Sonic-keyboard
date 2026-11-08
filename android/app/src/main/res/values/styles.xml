@@ -21,13 +21,13 @@
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
-    <style name="VelocityNativeTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="VelocityNativeBase" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#2359E8</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:statusBarColor">#F7F8FA</item>
         <item name="android:navigationBarColor">#F7F8FA</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
+    <style name="VelocityNativeTheme" parent="VelocityNativeBase" />
 </resources>
