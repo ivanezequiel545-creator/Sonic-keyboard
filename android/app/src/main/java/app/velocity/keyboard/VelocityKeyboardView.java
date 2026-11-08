@@ -46,6 +46,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   private String mediaTab="emoji";
   private long lastSpace;
   private LinearLayout panel;
+  private MediaPanel mediaPanel;
   private TextView searchLabel;
   private boolean predictionsAllowed;
   private final List<Button> candidateButtons=new ArrayList<>();
@@ -105,6 +106,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   }
 
   public void finishEditor() {
+    if(mediaPanel!=null)mediaPanel.close();
     for (ComfortKey key : keys) key.cancel();
     handler.removeCallbacksAndMessages(null);
     shifted = capsLock = symbols = emojis = tools = searching = false;
@@ -134,6 +136,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   }
 
   public void refresh() {
+    if(mediaPanel!=null){mediaPanel.close();mediaPanel=null;}
     applyBottomPadding();
     for (ComfortKey key : keys) key.cancel();
     keys.clear();
@@ -188,7 +191,7 @@ public final class VelocityKeyboardView extends LinearLayout {
         Button choice=new Button(getContext());choice.setAllCaps(false);choice.setText(tab.equals("emoji")?"Emojis":tab.equals("gif")?"GIFs":"Stickers");choice.setTextSize(12);palette.chip(choice,tab.equals(mediaTab));choice.setOnClickListener(v->{mediaTab=tab;refresh();});tabs.addView(choice,new LayoutParams(0,dp(40),1));
       }
       panel.addView(tabs);
-      if(!mediaTab.equals("emoji")&&!privateMode())panel.addView(new MediaPanel(getContext(),mediaTab,(item,share)->listener.onMedia(item,share)));
+      if(!mediaTab.equals("emoji")&&!privateMode()){mediaPanel=new MediaPanel(getContext(),mediaTab,(item,share)->listener.onMedia(item,share));panel.addView(mediaPanel);}
       else {
       panel.addView(
         new EmojiPanel(

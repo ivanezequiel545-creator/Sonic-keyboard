@@ -37,6 +37,26 @@ public class RemoteMediaTest {
       assertFalse(cached.exists());
     }finally{RemoteMedia.clear(isolated);}
   }
+  private MediaPanel mediaPanel(android.view.View view){
+    if(view instanceof MediaPanel)return (MediaPanel)view;
+    if(view instanceof android.view.ViewGroup){android.view.ViewGroup group=(android.view.ViewGroup)view;for(int i=0;i<group.getChildCount();i++){MediaPanel found=mediaPanel(group.getChildAt(i));if(found!=null)return found;}}
+    return null;
+  }
+  @Test public void finishingInputClosesMediaEvenWhileTheViewIsAttached(){
+    Context target=InstrumentationRegistry.getInstrumentation().getTargetContext();
+    boolean incognito=KeyboardPreferences.flag(target,"incognito");KeyboardPreferences.get(target).edit().putBoolean("incognito",false).commit();
+    try{InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{
+      VelocityKeyboardView view=new VelocityKeyboardView(new android.view.ContextThemeWrapper(target,android.R.style.Theme_Material_Light_NoActionBar),new VelocityKeyboardView.Listener(){
+        public void onText(String text){}public void onDelete(){}public void onEnter(){}public void onSwitchKeyboard(){}public void onSettings(){}public void onHide(){}
+      });
+      java.util.ArrayList<android.view.View> controls=new java.util.ArrayList<>();view.findViewsWithText(controls,"Emojis o letras",android.view.View.FIND_VIEWS_WITH_CONTENT_DESCRIPTION);assertFalse(controls.isEmpty());controls.get(0).performClick();
+      controls.clear();view.findViewsWithText(controls,"GIFs",android.view.View.FIND_VIEWS_WITH_TEXT);assertFalse(controls.isEmpty());controls.get(0).performClick();
+      MediaPanel panel=mediaPanel(view);assertNotNull(panel);assertFalse(panel.isClosed());
+      // IME hide does not necessarily detach its input view from the window.
+      view.finishEditor();assertTrue(panel.isClosed());
+    });}finally{KeyboardPreferences.get(target).edit().putBoolean("incognito",incognito).commit();}
+  }
+
   private String shell(String command)throws Exception{
     try(ParcelFileDescriptor fd=InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command);InputStream in=new FileInputStream(fd.getFileDescriptor())){return new String(MediaRepository.readBounded(in),"UTF-8").trim();}
   }

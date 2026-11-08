@@ -79,5 +79,7 @@ final class MediaPanel extends LinearLayout {
   private void notifyContent(){if(isAttachedToWindow())sendAccessibilityEvent(android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);}
   @Override public void onInitializeAccessibilityEvent(android.view.accessibility.AccessibilityEvent event){super.onInitializeAccessibilityEvent(event);if(event.getEventType()==android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED)event.setContentChangeTypes(android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);}
   private void cancelDownloads(){epoch++;for(Future<?> task:downloads)task.cancel(true);downloads.clear();}
-  @Override protected void onDetachedFromWindow(){detached=true;online=false;cancelDownloads();super.onDetachedFromWindow();}
+  boolean isClosed(){return detached;}
+  void close(){detached=true;online=false;cancelDownloads();}
+  @Override protected void onDetachedFromWindow(){close();super.onDetachedFromWindow();}
 }
