@@ -17,7 +17,7 @@ public final class SpanishSuggestions {
     private final Set<String> known=new HashSet<>();
     private final Map<String,List<String>> prefixes=new HashMap<>();
     public SpanishSuggestions(Reader source)throws IOException {
-        try(BufferedReader reader=new BufferedReader(source)){String line;while((line=reader.readLine())!=null){String word=line.split("\\s+")[0];if(!word.matches("[a-záéíóúüñ]{2,22}")||!known.add(word))continue;words.add(word);String folded=fold(word);for(int i=1;i<=Math.min(3,folded.length());i++)prefixes.computeIfAbsent(folded.substring(0,i),k->new ArrayList<>()).add(word);}}
+        try(BufferedReader reader=new BufferedReader(source)){String line;while((line=reader.readLine())!=null){String word=line.split("\\s+")[0];if(!word.matches("[a-záéíóúüñ]{2,22}")||!known.add(word))continue;words.add(word);String folded=fold(word);for(int i=1;i<=Math.min(3,folded.length());i++){String prefix=folded.substring(0,i);List<String> bucket=prefixes.get(prefix);if(bucket==null){bucket=new ArrayList<>();prefixes.put(prefix,bucket);}bucket.add(word);}}}
     }
     public int size(){return words.size();}
     public static String currentWord(CharSequence before){if(before==null)return "";Matcher match=WORD.matcher(before);return match.find()?match.group(1):"";}
@@ -29,7 +29,7 @@ public final class SpanishSuggestions {
     public List<String> suggest(String typed){
         if(typed.isEmpty())return Arrays.asList("hola","gracias","bien");
         LinkedHashSet<String> result=new LinkedHashSet<>();result.add(typed);
-        String lower=typed.toLowerCase(ES),folded=fold(typed);String fix=automaticCorrection(typed);if(!fix.equals(typed))result.add(fix);
+        String folded=fold(typed);String fix=automaticCorrection(typed);if(!fix.equals(typed))result.add(fix);
         List<String> bucket=prefixes.get(folded.substring(0,Math.min(3,folded.length())));
         if(bucket!=null)for(String word:bucket)if(fold(word).startsWith(folded)){result.add(matchCase(word,typed));if(result.size()>=3)break;}
         if(result.size()<3&&typed.length()>=3)for(String word:words){if(oneEdit(folded,fold(word))){result.add(matchCase(word,typed));if(result.size()>=3)break;}}

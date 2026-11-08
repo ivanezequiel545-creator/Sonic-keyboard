@@ -149,7 +149,7 @@ public final class VelocityInputMethodService
         String original=SpanishSuggestions.currentWord(connection.getTextBeforeCursor(80,0));String corrected=SpanishSuggestions.automaticCorrection(original);
         if(!original.equals(corrected)){
           int expected=cursor<0?-1:cursor-original.length()+corrected.length()+1;
-          connection.beginBatchEdit();try{if(connection.deleteSurroundingText(original.length(),0)&&connection.commitText(corrected+" ",1)){undoOriginal=original;undoReplacement=corrected;undoCursor=expected;}}finally{connection.endBatchEdit();}requestSuggestions();return;
+          boolean applied=false;connection.beginBatchEdit();try{if(connection.deleteSurroundingText(original.length(),0)){applied=true;if(connection.commitText(corrected+" ",1)){undoOriginal=original;undoReplacement=corrected;undoCursor=expected;}else connection.commitText(original+" ",1);}}finally{connection.endBatchEdit();}if(applied){requestSuggestions();return;}
         }
       }
     }
