@@ -362,10 +362,11 @@ public class NativeKeyboardTest {
       // Fully disconnect the old accessibility-backed automation before
       // creating the input-only connection. Switching flags in-place can leave
       // the old service registered on API 31. Never skip the disabled assertion.
-      instrumentation.getUiAutomation().destroy();
-      android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
+      // shell() obtains the default automation: finish all shell setup first.
       shell("settings put secure enabled_accessibility_services ''");
       shell("settings put secure accessibility_enabled 0");
+      instrumentation.getUiAutomation().destroy();
+      android.app.UiAutomation automation=instrumentation.getUiAutomation(android.app.UiAutomation.FLAG_DONT_USE_ACCESSIBILITY);
       android.view.accessibility.AccessibilityManager manager=(android.view.accessibility.AccessibilityManager)context.getSystemService(Context.ACCESSIBILITY_SERVICE);
       long deadline=android.os.SystemClock.uptimeMillis()+5000;
       while(manager.isEnabled()&&android.os.SystemClock.uptimeMillis()<deadline)android.os.SystemClock.sleep(50);
