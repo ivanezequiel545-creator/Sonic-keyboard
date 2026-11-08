@@ -81,6 +81,7 @@ jobs:
       - name: Web interface, release links and offline downloads
         run: TEST_OFFLINE=1 npm run test:e2e
       - name: Compile 1.0.1 verification APK, unit tests and lint
+        id: android_build
         working-directory: android
         run: |
           chmod +x gradlew
@@ -113,6 +114,7 @@ jobs:
           mkdir -p android/app/build/reports/native-api29
           cp -R android/app/build/outputs/androidTest-results/connected/. android/app/build/reports/native-api29/
       - name: Regression - type and reopen without accessibility (Android 12)
+        if: ${{ !cancelled() && steps.android_build.outcome == 'success' }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 31
