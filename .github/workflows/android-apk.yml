@@ -144,9 +144,9 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import os, subprocess, re
-          repo = os.environ['GH_REPO']
-          job = subprocess.check_output(['gh','api',f"repos/{repo}/actions/runs/{os.environ['RUN_ID']}/jobs",'--jq','.jobs[]|select(.name=="build")|.id'],text=True).strip()
-          log = subprocess.check_output(['gh','api',f'repos/{repo}/actions/jobs/{job}/logs'],text=True)
+          result = subprocess.run(['gh','run','view',os.environ['RUN_ID'],'--log'],capture_output=True,text=True)
+          log = result.stdout + result.stderr
+
           lines = [line for line in log.splitlines() if re.search(r'error|warning|panic|fatal|KVM|emulator |emulator-|Boot|boot|GPU|qemu',line,re.I)]
           text = '\n'.join(line for line in lines if re.search(r'FATAL|PANIC|Exception|FAILED',line))[:3000] + '\n--- LOG TAIL ---\n' + log[-9000:]
           for start in range(0,len(text),3300):
