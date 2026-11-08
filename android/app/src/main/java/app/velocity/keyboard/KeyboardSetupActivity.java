@@ -48,7 +48,7 @@ public final class KeyboardSetupActivity extends Activity {
       );
       return insets;
     });
-    text("VELOCITY · 1.0.1", 12, 0xff6f8553);
+    text("VELOCITY · 1.0.2", 12, 0xff6f8553);
     text("Cómodo. A tu manera.", 28, 0xff20252d);
     text(
       "Ajustes locales del teclado nativo. No guarda ni envía tus pulsaciones.",
@@ -215,8 +215,10 @@ public final class KeyboardSetupActivity extends Activity {
       12,
       0xff697b94
     );
-    text("GIFs y stickers · sin conexión",20,0xff20252d);
+    text("GIFs y stickers · locales y en línea",20,0xff20252d);
     text("Pack original incluido: 6 stickers y 4 GIFs. Abre ☺ en el teclado y cambia de pestaña. Toca para enviar en apps compatibles; mantén pulsado para compartir. Las miniaturas de GIF no se animan para ahorrar batería. Puedes importar hasta 12 PNG, WebP o GIF (4 MB y 4096 px por lado como máximo), solo desde el selector de Android. No se envía nada a un buscador ni se lee toda tu galería.",13,0xff697b94);
+    text("1.0.2 añade una selección de GIPHY/famosos y del pack G0VY8R de Sticker.ly, con fuente/autor. En el panel pulsa Cargar selección en línea: usa Internet y los proveedores reciben tu IP/peticiones de imagen, no tu texto. No se empaquetan sus archivos como libres de derechos. Descargas de hasta 4 MB, caché de 16 MB y 7 días; las fuentes pueden retirar archivos. Disponible fuera de modo privado y campos protegidos.",13,0xff697b94);
+    button("Borrar caché de selección en línea",()->RemoteMedia.IO.execute(()->{RemoteMedia.clear(this);runOnUiThread(()->Toast.makeText(this,"Caché en línea borrada",Toast.LENGTH_SHORT).show());}));
     button("Importar mi GIF o sticker",()->{Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT);pick.setType("image/*");pick.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"image/gif","image/png","image/webp"});pick.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(pick,42);});
     button("Borrar mis GIFs y stickers importados",()->new android.app.AlertDialog.Builder(this).setTitle("¿Borrar archivos importados?").setMessage("No elimina el pack original. Se quitan las copias privadas y las copias de envío en caché.").setNegativeButton("Cancelar",null).setPositiveButton("Borrar",(dialog,which)->EmojiRepository.IO.execute(()->{MediaRepository.clearImports(this);runOnUiThread(()->Toast.makeText(this,"Importados eliminados",Toast.LENGTH_SHORT).show());})).show());
     text("Emojis y privacidad", 20, 0xff20252d);

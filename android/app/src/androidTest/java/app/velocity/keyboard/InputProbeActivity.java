@@ -28,13 +28,13 @@ public class InputProbeActivity extends Activity {
             boolean requested=false;
             try {
               if((flags&InputConnection.INPUT_CONTENT_GRANT_READ_URI_PERMISSION)!=0){content.requestPermission();requested=true;}
-              byte[] header=new byte[6];int count;
+              byte[] header=new byte[12];int count;
               try(java.io.InputStream in=getContentResolver().openInputStream(content.getContentUri())) {
                 if(in==null)return false;
                 count=in.read(header);
               }
               String mime=content.getDescription().getMimeType(0);
-              boolean valid=count>=4&&((mime.equals("image/png")&&header[0]==(byte)137&&header[1]=='P')||(mime.equals("image/gif")&&header[0]=='G'&&header[1]=='I'));
+              boolean valid=count>=4&&((mime.equals("image/png")&&header[0]==(byte)137&&header[1]=='P')||(mime.equals("image/gif")&&header[0]=='G'&&header[1]=='I')||(mime.equals("image/webp")&&count>=12&&header[0]=='R'&&header[1]=='I'&&header[8]=='W'&&header[9]=='E'));
               if(!valid)return false;
               receiver.setText("recibido:"+mime);receiver.setSelection(receiver.length());return true;
             } catch(Exception e) {

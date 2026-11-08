@@ -21,6 +21,7 @@ final class PanelColors {
   }
   static int foreground(int background){return ColorUtils.calculateLuminance(background)>.179?0xff000000:0xffffffff;}
   void chip(TextView view,boolean selected){
+    view.setGravity(android.view.Gravity.CENTER);view.setTextAlignment(android.view.View.TEXT_ALIGNMENT_CENTER);
     int fill=selected?accent:tile;
     GradientDrawable shape=new GradientDrawable();shape.setColor(fill);shape.setCornerRadius(12*view.getResources().getDisplayMetrics().density);
     shape.setStroke(1,ColorUtils.blendARGB(fill,ink,.16f));

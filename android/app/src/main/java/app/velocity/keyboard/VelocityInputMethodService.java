@@ -21,6 +21,7 @@ public final class VelocityInputMethodService
   private final android.os.Handler suggestionHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   private final android.os.Handler mediaHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   private volatile int suggestionGeneration;
+  private volatile int mediaGeneration;
   private int cursor=-1,undoCursor=-1;
   static volatile String suggestionDiagnostics="not started"; // Test-only counts, never words or editor contents.
   private String candidateWord="",undoOriginal,undoReplacement;
@@ -89,17 +90,25 @@ public final class VelocityInputMethodService
   }
   @Override public void onMedia(MediaRepository.Item item,boolean share){
     if(!canSendMedia())return;
-    final EditorInfo target=editor;final InputConnection connection=getCurrentInputConnection();
+    final EditorInfo target=editor;final InputConnection connection=getCurrentInputConnection();final int mediaRequest=mediaGeneration;
     if(connection==null)return;
     if(!share&&!supportsMedia(target,item.mime)){
       android.widget.Toast.makeText(this,"Esta app no admite esta imagen desde el teclado. Mantén pulsado para compartir.",android.widget.Toast.LENGTH_LONG).show();return;
     }
-    EmojiRepository.IO.execute(()->{
+    java.util.concurrent.ExecutorService mediaIO=item.online()?RemoteMedia.IO:EmojiRepository.IO;
+    mediaIO.execute(()->{
       try{
-        java.io.File file=MediaRepository.stage(this,item);
+        RemoteMedia.Active allowed=()->mediaGeneration==mediaRequest&&editor==target&&!KeyboardPreferences.flag(this,"incognito");
+        java.io.File file;
+        if(item.online()){
+          java.io.File downloaded=RemoteMedia.obtain(this,item,allowed);
+          java.io.File directory=new java.io.File(getCacheDir(),"velocity-media");if(!directory.isDirectory()&&!directory.mkdirs())throw new java.io.IOException("Storage unavailable");
+          file=new java.io.File(directory,item.file);
+          try(java.io.InputStream input=new java.io.FileInputStream(downloaded);java.io.OutputStream output=new java.io.FileOutputStream(file)){byte[] buffer=new byte[8192];int n;while((n=input.read(buffer))!=-1){if(!allowed.allowed())throw new java.io.InterruptedIOException();output.write(buffer,0,n);}}
+        }else file=MediaRepository.stage(this,item);
         android.net.Uri uri=androidx.core.content.FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
         mediaHandler.post(()->{
-          if(editor!=target||!canSendMedia()||!isInputViewShown())return;
+          if(mediaGeneration!=mediaRequest||editor!=target||!canSendMedia()||!isInputViewShown())return;
           try{
             if(share){
               Intent intent=new Intent(Intent.ACTION_SEND).setType(item.mime).putExtra(Intent.EXTRA_STREAM,uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -108,13 +117,13 @@ public final class VelocityInputMethodService
             }else{
               boolean legacy=android.os.Build.VERSION.SDK_INT<25;
               if(legacy)grantUriPermission(target.packageName,uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);
-              androidx.core.view.inputmethod.InputContentInfoCompat content=new androidx.core.view.inputmethod.InputContentInfoCompat(uri,new android.content.ClipDescription(item.label,new String[]{item.mime}),null);
+              androidx.core.view.inputmethod.InputContentInfoCompat content=new androidx.core.view.inputmethod.InputContentInfoCompat(uri,new android.content.ClipDescription(item.provider.isEmpty()?item.label:item.label+" · "+item.provider,new String[]{item.mime}),item.online()?android.net.Uri.parse(item.source):null);
               boolean sent=androidx.core.view.inputmethod.InputConnectionCompat.commitContent(connection,target,content,legacy?0:androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION,null);
               if(!sent){if(legacy)revokeUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);android.widget.Toast.makeText(this,"La app rechazó la imagen. Mantén pulsado para compartir.",android.widget.Toast.LENGTH_LONG).show();}
             }
           }catch(RuntimeException e){android.widget.Toast.makeText(this,"No se pudo enviar. Prueba compartir manteniendo pulsado.",android.widget.Toast.LENGTH_LONG).show();}
         });
-      }catch(java.io.IOException e){mediaHandler.post(()->android.widget.Toast.makeText(this,"No se pudo abrir la imagen local.",android.widget.Toast.LENGTH_SHORT).show());}
+      }catch(java.io.IOException e){mediaHandler.post(()->android.widget.Toast.makeText(this,"No se pudo abrir la imagen. Revisa la conexión, la fuente o el límite de 4 MB.",android.widget.Toast.LENGTH_SHORT).show());}
     });
   }
 
@@ -127,6 +136,7 @@ public final class VelocityInputMethodService
 
   @Override
   public void onStartInput(EditorInfo info, boolean restarting) {
+    mediaGeneration++;
     super.onStartInput(info, restarting);
     editor = info;
     configureEditor();
@@ -313,6 +323,7 @@ public final class VelocityInputMethodService
 
   @Override
   public void onFinishInputView(boolean finishingInput) {
+    mediaGeneration++;
     clearUndo();stopSuggestions();
     if (keyboard != null) keyboard.finishEditor();
     super.onFinishInputView(finishingInput);
@@ -369,10 +380,11 @@ public final class VelocityInputMethodService
     requestHideSelf(0);
   }
 
-  @Override public void onDestroy(){clearUndo();stopSuggestions();mediaHandler.removeCallbacksAndMessages(null);super.onDestroy();}
+  @Override public void onDestroy(){mediaGeneration++;clearUndo();stopSuggestions();mediaHandler.removeCallbacksAndMessages(null);super.onDestroy();}
 
   @Override
   public void onFinishInput() {
+    mediaGeneration++;
     clearUndo();stopSuggestions();
     if (keyboard != null) keyboard.finishEditor();
     editor = null;

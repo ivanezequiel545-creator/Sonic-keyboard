@@ -100,7 +100,7 @@ export default function EmojiPicker({
   }
   const size = 72,
     pages = Math.max(1, Math.ceil(matches.length / size));
-  if (mediaMode !== "emoji") return <section className="emoji-library" aria-label="Catálogo de emojis"><MediaTabs value={mediaMode} onChange={setMediaMode} /><MediaPicker kind={mediaMode} /></section>;
+  if (mediaMode !== "emoji") return <section className="emoji-library" aria-label="Catálogo de emojis"><MediaTabs value={mediaMode} onChange={setMediaMode} /><MediaPicker kind={mediaMode} incognito={incognito} /></section>;
   return (
     <section className="emoji-library" aria-label="Catálogo de emojis">
       <MediaTabs value={mediaMode} onChange={setMediaMode} />

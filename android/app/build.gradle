@@ -10,7 +10,7 @@ android {
         // Numerically higher than the published 1.1.0-alpha.* APKs. Android
         // compares versionCode, not the user-requested 1.0.0 versionName.
         versionCode = 2000000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger()
-        versionName = "1.0.1"
+        versionName = "1.0.2"
         buildConfigField "int", "PREVIEW_STAGE", "4"
         resValue "bool", "velocity_ime_enabled", "true"
         resValue "bool", "velocity_setup_enabled", "true"
