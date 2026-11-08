@@ -57,6 +57,13 @@ jobs:
         run: |
           chmod +x gradlew
           bash ../scripts/gradle-ci.sh assembleDebug testWebPreviewDebugUnitTest testPersonalPreviewDebugUnitTest testImePreviewDebugUnitTest lintImePreviewDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+      - name: Free hosted runner disk for emulator userdata
+        run: |
+          # Emulator 37 checks the image's minimum userdata size even when a
+          # smaller disk-size is requested. These preinstalled toolchains are
+          # not used by this Java/Capacitor project; do not remove the SDK itself.
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup "$ANDROID_HOME/ndk"
+          df -h /
       - name: Enable KVM for the Android emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
