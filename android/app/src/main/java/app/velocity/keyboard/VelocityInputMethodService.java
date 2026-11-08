@@ -22,10 +22,18 @@ public final class VelocityInputMethodService
   private final android.os.Handler mediaHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   private volatile int suggestionGeneration;
   private volatile int mediaGeneration;
-  private int cursor=-1,undoCursor=-1;
+  private int undoCursor=-1;
   static volatile String suggestionDiagnostics="not started"; // Test-only counts, never words or editor contents.
   private String candidateWord="",undoOriginal,undoReplacement;
   private java.util.List<String> lastCandidates=java.util.Collections.emptyList();
+  private int selectionPosition(InputConnection connection){
+    if(connection==null)return -1;
+    try{
+      android.view.inputmethod.ExtractedTextRequest request=new android.view.inputmethod.ExtractedTextRequest();request.hintMaxChars=128;request.hintMaxLines=1;
+      android.view.inputmethod.ExtractedText state=connection.getExtractedText(request,0);
+      return state!=null&&state.selectionStart==state.selectionEnd&&state.selectionEnd>=0?state.startOffset+state.selectionEnd:-1;
+    }catch(RuntimeException ignored){return -1;}
+  }
   private void clearUndo(){undoOriginal=null;undoReplacement=null;undoCursor=-1;}
   public static boolean acceptsSuggestions(int type,int options,boolean incognito){
     if(incognito||(options&0x1000000)!=0||(type&InputType.TYPE_MASK_CLASS)!=InputType.TYPE_CLASS_TEXT||(type&(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS|InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE))!=0)return false;
@@ -69,8 +77,9 @@ public final class VelocityInputMethodService
   }
   @Override public void onUpdateSelection(int oldStart,int oldEnd,int newStart,int newEnd,int candidatesStart,int candidatesEnd){
     super.onUpdateSelection(oldStart,oldEnd,newStart,newEnd,candidatesStart,candidatesEnd);
-    cursor=newEnd;
-    if(undoOriginal!=null&&(newStart!=newEnd||newEnd!=undoCursor))clearUndo();
+    // Selection notifications can describe an older edit even after the host
+    // has applied our correction. Validate the live cursor, not queued offsets.
+    if(undoOriginal!=null&&(newStart!=newEnd||newEnd!=undoCursor)&&selectionPosition(getCurrentInputConnection())!=undoCursor)clearUndo();
     // Repeated same-selection notifications must not cancel a pending result.
     if(oldStart!=newStart||oldEnd!=newEnd)requestSuggestions();
   }
@@ -152,7 +161,7 @@ public final class VelocityInputMethodService
 
   private void configureEditor() {
     if (keyboard == null) return;
-    stopSuggestions();clearUndo();cursor=editor==null?-1:editor.initialSelEnd;
+    stopSuggestions();clearUndo();
     int type = editor == null ? InputType.TYPE_CLASS_TEXT : editor.inputType;
     int inputClass = type & InputType.TYPE_MASK_CLASS;
     int variation = type & InputType.TYPE_MASK_VARIATION;
@@ -224,7 +233,8 @@ public final class VelocityInputMethodService
       if((selected==null||selected.length()==0)&&!SpanishSuggestions.wordContinues(connection.getTextAfterCursor(1,0))){
         String original=SpanishSuggestions.currentWord(connection.getTextBeforeCursor(80,0));String corrected=SpanishSuggestions.automaticCorrection(original);
         if(!original.equals(corrected)){
-          int expected=cursor<0?-1:cursor-original.length()+corrected.length()+1;
+          int position=selectionPosition(connection);
+          int expected=position<0?-1:position-original.length()+corrected.length()+1;
           boolean applied=false;connection.beginBatchEdit();try{if(connection.deleteSurroundingText(original.length(),0)){applied=true;if(connection.commitText(corrected+" ",1)){undoOriginal=original;undoReplacement=corrected;undoCursor=expected;}else connection.commitText(original+" ",1);}}finally{connection.endBatchEdit();}if(applied){requestSuggestions();return;}
         }
       }
@@ -248,7 +258,7 @@ public final class VelocityInputMethodService
       return;
     }
     CharSequence selected = connection.getSelectedText(0);
-    if(undoOriginal!=null&&canSuggest()&&(selected==null||selected.length()==0)&&undoCursor>=0&&cursor==undoCursor){String expected=undoReplacement+" ";CharSequence before=connection.getTextBeforeCursor(expected.length(),0);if(before!=null&&expected.contentEquals(before)){String original=undoOriginal;clearUndo();connection.beginBatchEdit();try{connection.deleteSurroundingText(expected.length(),0);connection.commitText(original,1);}finally{connection.endBatchEdit();}return;}}
+    if(undoOriginal!=null&&canSuggest()&&(selected==null||selected.length()==0)&&undoCursor>=0&&selectionPosition(connection)==undoCursor){String expected=undoReplacement+" ";CharSequence before=connection.getTextBeforeCursor(expected.length(),0);if(before!=null&&expected.contentEquals(before)){String original=undoOriginal;clearUndo();connection.beginBatchEdit();try{connection.deleteSurroundingText(expected.length(),0);connection.commitText(original,1);}finally{connection.endBatchEdit();}return;}}
     clearUndo();
     if (selected != null && selected.length() > 0) {
       connection.commitText("", 1);
