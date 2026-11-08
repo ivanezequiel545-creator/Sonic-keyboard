@@ -10,4 +10,4 @@ trap cleanup EXIT
 # Scope to our app: an unqualified task also runs the vendor plugins' own
 # instrumentation suites, with separate dependency graphs/test applications.
 cd android
-bash ../scripts/gradle-ci.sh :app:connectedDebugAndroidTest --no-daemon -PvelocityBuildNumber="${GITHUB_RUN_NUMBER:-0}"
+bash ../scripts/gradle-ci.sh :app:connectedDebugAndroidTest --no-daemon -PvelocityBuildNumber="${GITHUB_RUN_NUMBER:-0}" "$@"

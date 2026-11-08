@@ -334,7 +334,7 @@ public class NativeKeyboardTest {
 
   @Test(timeout=90000)
   public void typingAndReopeningWorkWithoutAnAccessibilityService() throws Exception {
-    if(android.os.Build.VERSION.SDK_INT<24)return;
+    org.junit.Assume.assumeTrue("No-accessibility automation requires Android 12; exercised in the second emulator",android.os.Build.VERSION.SDK_INT>=31);
     android.app.Instrumentation instrumentation=InstrumentationRegistry.getInstrumentation();
     Context context=instrumentation.getTargetContext();
     UiDevice device=UiDevice.getInstance(instrumentation);

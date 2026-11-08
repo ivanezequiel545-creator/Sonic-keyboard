@@ -108,6 +108,21 @@ jobs:
           target: default
           disable-animations: true
           script: bash scripts/test-android-ci.sh
+      - name: Preserve Android 10 reports
+        run: |
+          mkdir -p android/app/build/reports/native-api29
+          cp -R android/app/build/outputs/androidTest-results/connected/. android/app/build/reports/native-api29/
+      - name: Regression - type and reopen without accessibility (Android 12)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: google_apis
+          disk-size: 2048M
+          ram-size: 2048M
+          emulator-boot-timeout: 180
+          arch: x86_64
+          disable-animations: true
+          script: bash scripts/test-android-ci.sh -Pandroid.testInstrumentationRunnerArguments.class=app.velocity.keyboard.NativeKeyboardTest#typingAndReopeningWorkWithoutAnAccessibilityService
       - name: Build signed release when a protected key exists
         if: steps.signing.outputs.ready == 'true'
         working-directory: android
