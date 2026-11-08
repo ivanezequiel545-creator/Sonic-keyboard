@@ -86,6 +86,8 @@ jobs:
         run: |
           chmod +x gradlew
           bash ../scripts/gradle-ci.sh :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+      - name: Check selected live media without bundling third-party files
+        run: node scripts/check-media-sources.mjs
       - name: Free hosted runner disk for emulator userdata
         run: |
           # Emulator 37 checks the image's minimum userdata size even when a
