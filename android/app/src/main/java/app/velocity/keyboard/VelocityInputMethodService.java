@@ -102,7 +102,8 @@ public final class VelocityInputMethodService
           if(editor!=target||!canSendMedia()||!isInputViewShown())return;
           try{
             if(share){
-              Intent intent=new Intent(Intent.ACTION_SEND).setType(item.mime).putExtra(Intent.EXTRA_STREAM,uri).setClipData(android.content.ClipData.newUri(getContentResolver(),item.label,uri)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+              Intent intent=new Intent(Intent.ACTION_SEND).setType(item.mime).putExtra(Intent.EXTRA_STREAM,uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+              intent.setClipData(android.content.ClipData.newUri(getContentResolver(),item.label,uri));
               startActivity(Intent.createChooser(intent,"Compartir "+item.label).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }else{
               boolean legacy=android.os.Build.VERSION.SDK_INT<25;
