@@ -2,6 +2,8 @@
 
 Fecha: **8 de noviembre de 2026 (UTC)**.
 
+> **Historial de la revisión inicial.** Esta APK precede al fallo de cierre reportado en teléfono. Las pruebas de UiAutomator mantenían accesibilidad activada y no cubrían el escenario sin ese servicio. No usar este artefacto como descarga de la revisión corregida. [Descargar y verificar la revisión corregida](verification-1.0.1-revision.md).
+
 ## Resultado comprobado
 
 El [run 42475469866](https://github.com/ivanezequiel545-creator/Sonic-keyboard/actions/runs/42475469866) terminó con **SUCCESS**, sobre `6f63b73fa64e6592ebc857470d1022785b64748a` (9 min 5 s).

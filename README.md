@@ -10,7 +10,9 @@ Incluye 12.000 palabras por frecuencia para sugerencias locales, y corrección a
 
 El vocabulario derivado de Hermit Dave/FrequencyWords/OpenSubtitles2018 conserva su **CC BY-SA 4.0**, independiente de la Unlicense del código. [Fuente, modificaciones y licencia](public/licenses/spanish-words.txt). Las dos distribuciones están versionadas; las compilaciones no descargan diccionarios ni datos de usuarios.
 
-**Verificación 1.0.1 completada:** [CI correcto, APK de prueba e instrucciones](docs/verification-1.0.1.md). Pasaron 13 pruebas Node, 16 de navegador y 5 instrumentadas Android, además de unidades y lint.
+**Revisión de la misma 1.0.1:** corrige el cierre al escribir sin accesibilidad activa y mejora el color/contraste del panel de emojis. Incluye pestañas GIFs/Stickers, 6 stickers propios y 4 GIF animados offline, envío a apps compatibles o compartir manteniendo pulsado, e importación privada de hasta 12 PNG/WebP/GIF desde ajustes nativos (4 MB por archivo). Los stickers se envían como imágenes, no como packs instalables de WhatsApp/Telegram. No hay buscador remoto ni envío de tus pulsaciones. La web descarga/comparte el pack y también lo precarga sin conexión.
+
+**[Descargar la APK 1.0.1 revisada y ver sus pruebas](docs/verification-1.0.1-revision.md).** CI correcto: 14 pruebas Node, 17 de navegador, unidades/lint y pruebas nativas en Android 10 más la regresión sin accesibilidad en Android 12. La [verificación inicial](docs/verification-1.0.1.md) se conserva como historial: su APK precede al cierre reportado y queda reemplazada por esta revisión.
 
 La APK de verificación es debug. La publicación de producción 1.0.1 sigue protegida por firma persistente y confirmación de prueba física; ver [el procedimiento](docs/stable-release.md) y [las notas 1.0.1](docs/releases/1.0.1.md).
 
@@ -22,7 +24,7 @@ En la app abre **Personalizar**; en Android puedes usar también **Activar mi te
 
 **Publicación:** la APK de verificación es debug. La release estable requiere firma persistente protegida y revisión física; [procedimiento y lista de validación](docs/stable-release.md), [notas 1.0.0](docs/releases/1.0.0.md). Los enlaces de descarga conservan las alpha publicadas hasta completar la publicación real. No se ha sustituido un enlace por una APK inexistente.
 
-**Verificación automática completada:** [CI correcto y APK 1.0.0 de prueba](docs/verification-1.0.0.md). Incluye 11 pruebas Node, 15 de interfaz/offline y la instrumentación del IME en otra aplicación. La APK disponible sigue siendo de verificación, no una publicación estable.
+**Historial de verificación 1.0.0:** [CI correcto y APK 1.0.0 de prueba](docs/verification-1.0.0.md). Incluye 11 pruebas Node, 15 de interfaz/offline y la instrumentación del IME en otra aplicación. La APK disponible sigue siendo de verificación, no una publicación estable.
 
 ### Compilar y probar la versión actual
 

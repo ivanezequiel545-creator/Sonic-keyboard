@@ -23,6 +23,9 @@ Registrar modelo/Android, APK/hash y resultado. Probar en al menos un teléfono 
 - Contraseña/PIN/campos sin aprendizaje: sin emojis/portapapeles sensible ni registros de recientes.
 - Cómodo/Compacto/Accesible, una mano, paisaje y gestos/tres botones; margen de navegación, errores de pulsación y comodidad real.
 - Centrado de letras/números/acciones en el dispositivo donde se reportó el problema y con su escala de fuente.
+- Escribir varias palabras con accesibilidad desactivada, ocultar y volver a abrir el teclado sin entrar a la app de Velocity; repetir al cambiar de aplicación. Probar también TalkBack si se usa.
+- Panel de emojis con colores claros/oscuros y colores propios: etiquetas y categoría activa legibles.
+- GIF y sticker en un chat que anuncie MIME de imagen compatible, y aviso en una app que no lo admita; compartir solo al mantener pulsado. Verificar animación real en la app receptora, importación PNG/WebP/GIF, rechazo de archivo grande/incorrecto, borrado de importados y ausencia en privado/contraseña. Los stickers son imágenes, no packs instalables de otras apps.
 - Barra española: completar una palabra, corrección al espacio, deshacer con ⌫, alternar opciones, cursor a mitad de texto, evitar resultados de otro campo, privado/contraseña/email/número y filtros sin autocorrección.
 - Repetición de borrado, cursor por espacio, acentos, símbolos y número; secuencias emoji completas.
 - Búsqueda nativa de emojis (la consulta no llega al campo de la otra app), categorías, tonos, recientes/favoritos y modo privado.
