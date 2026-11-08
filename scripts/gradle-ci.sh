@@ -11,11 +11,13 @@ else
   python3 - "$log" <<'PY'
 import sys
 from pathlib import Path
-message = Path(sys.argv[1]).read_text(errors='replace')[-16000:]
+def annotate(title, message):
+    message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print('::error title=' + title + '::' + message)
+annotate('Android build or test failure', Path(sys.argv[1]).read_text(errors='replace')[-3500:])
 for report in Path('app/build/reports').glob('lint-results*.txt'):
-    message += '\n' + report.read_text(errors='replace')[:9000]
-message = message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
-print('::error title=Android build or test failure::' + message)
+    annotate('Android lint details', report.read_text(errors='replace')[:3500])
+
 PY
   rm "$log"
   exit 1
