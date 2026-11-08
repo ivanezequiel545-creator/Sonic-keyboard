@@ -181,7 +181,7 @@ test("offline GIF and sticker pack is available before first use and downloads t
  await page.getByRole('tab',{name:'GIFs',exact:true}).click();await expect(page.locator('.media-grid button')).toHaveCount(4);
  await page.getByRole('checkbox',{name:'Animar miniaturas GIF'}).check();
  await expect(page.locator('.media-grid img').first()).toHaveAttribute('src','/media/hola.gif');
- expect(await page.locator('.media-grid img').first().evaluate(img=>img.complete&&img.naturalWidth===240)).toBe(true);
+ await expect.poll(()=>page.locator('.media-grid img').first().evaluate(img=>img.complete&&img.naturalWidth===240)).toBe(true);
  await page.getByRole('button',{name:'Seleccionar ¡Hola! animado',exact:true}).click();
  const gif=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar GIF',exact:true}).click();expect((await gif).suggestedFilename()).toBe('hola.gif');
  await page.getByRole('tab',{name:'Emojis',exact:true}).click();await expect(page.locator('.emoji-grid button')).toHaveCount(72);

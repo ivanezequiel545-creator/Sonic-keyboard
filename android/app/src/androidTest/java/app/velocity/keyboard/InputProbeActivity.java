@@ -15,11 +15,12 @@ public class InputProbeActivity extends Activity {
         EditText text = new EditText(this){
           @Override public android.view.inputmethod.InputConnection onCreateInputConnection(android.view.inputmethod.EditorInfo info){
             android.view.inputmethod.InputConnection base=super.onCreateInputConnection(info);
-            if(!getIntent().getBooleanExtra("rich",false)||base==null)return base;
-            androidx.core.view.inputmethod.EditorInfoCompat.setContentMimeTypes(info,new String[]{"image/png","image/gif","image/webp"});
-            return androidx.core.view.inputmethod.InputConnectionCompat.createWrapper(base,info,(content,flags,options)->{
+            if(!getIntent().getBooleanExtra("rich",false)||base==null||android.os.Build.VERSION.SDK_INT<25)return base;
+            info.contentMimeTypes=new String[]{"image/png","image/gif","image/webp"};
+            return new android.view.inputmethod.InputConnectionWrapper(base,false){
+              @Override public boolean commitContent(android.view.inputmethod.InputContentInfo content,int flags,android.os.Bundle options){
               try{
-                if((flags&androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION)!=0)content.requestPermission();
+                if((flags&android.view.inputmethod.InputConnection.INPUT_CONTENT_GRANT_READ_URI_PERMISSION)!=0)content.requestPermission();
                 byte[] header=new byte[6];int count;
                 try(java.io.InputStream in=getContentResolver().openInputStream(content.getContentUri())){if(in==null)return false;count=in.read(header);}
                 String mime=content.getDescription().getMimeType(0);
@@ -27,7 +28,8 @@ public class InputProbeActivity extends Activity {
                 if(!valid)return false;
                 setText("recibido:"+mime);setSelection(length());content.releasePermission();return true;
               }catch(Exception e){return false;}
-            });
+              }
+            };
           }
         }; text.setContentDescription("external-probe-text"); text.setHint("Texto"); text.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS); root.addView(text,new LinearLayout.LayoutParams(-1,120));
         EditText number = new EditText(this); number.setContentDescription("external-probe-number"); number.setHint("Número"); number.setInputType(InputType.TYPE_CLASS_NUMBER); root.addView(number,new LinearLayout.LayoutParams(-1,120));
@@ -42,7 +44,8 @@ public class InputProbeActivity extends Activity {
                 view.post(() -> ((android.view.inputmethod.InputMethodManager)
                     getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(view,
                     android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT));
-            });
+              }
+            };
         }
         setContentView(root);
     }
