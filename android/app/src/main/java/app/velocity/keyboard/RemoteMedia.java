@@ -12,6 +12,8 @@ import org.json.*;
 
 /** Fixed public references. No search queries, configured credentials or background sync. */
 public final class RemoteMedia {
+  static boolean consented(Context context){return context.getSharedPreferences("velocity-online-media",Context.MODE_PRIVATE).getBoolean("enabled",false);}
+  static void consent(Context context,boolean enabled){context.getSharedPreferences("velocity-online-media",Context.MODE_PRIVATE).edit().putBoolean("enabled",enabled).apply();}
   public interface Active {boolean allowed();}
   public static final ExecutorService IO=Executors.newFixedThreadPool(2);
   private static volatile long cacheGeneration;

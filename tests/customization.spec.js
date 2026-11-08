@@ -195,9 +195,11 @@ test('external selection is opt-in, attributed, cancellable and hidden in privat
  const remote=page.getByRole('region',{name:'Selección de GIPHY'});
  await expect(remote.getByRole('button',{name:'Cargar selección en línea',exact:true})).toBeEnabled();expect(requests).toHaveLength(0);
  await remote.getByRole('button',{name:'Cargar selección en línea',exact:true}).click();await expect(remote.locator('article')).toHaveCount(6);
- await expect(remote.getByRole('link',{name:'Ver fuente'})).toHaveCount(6);await expect.poll(()=>requests.length).toBeGreaterThan(0);
+ await expect(remote.getByRole('link')).toHaveCount(0);await expect.poll(()=>requests.length).toBeGreaterThan(0);
+ await remote.getByText('Créditos y fuentes',{exact:true}).click();await expect(remote.getByRole('link',{name:'Ver fuente'})).toHaveCount(6);await remote.getByText('Créditos y fuentes',{exact:true}).click();
  await remote.getByRole('button',{name:'Seleccionar Wendy · impactada',exact:true}).click();
  const download=page.waitForEvent('download');await remote.getByRole('button',{name:'Descargar selección',exact:true}).click();expect((await download).suggestedFilename()).toBe('giphy-ugqysnkf2himbgt0cv.gif');
+ await page.getByRole('tab',{name:'Emojis',exact:true}).click();await page.getByRole('tab',{name:'GIFs',exact:true}).click();await expect(remote.locator('article')).toHaveCount(6);await expect(remote.getByRole('button',{name:'Cargar selección en línea',exact:true})).toHaveCount(0);expect(page.context().pages()).toHaveLength(1);
  await remote.getByRole('button',{name:'Ocultar selección en línea',exact:true}).click();await expect(remote.locator('article')).toHaveCount(0);
  await page.getByRole('checkbox',{name:'Modo privado · sin recientes',exact:true}).check();await expect(page.getByText('Selección en línea desactivada en modo privado.',{exact:true})).toBeVisible();await expect(page.locator('.remote-media img')).toHaveCount(0);
 });

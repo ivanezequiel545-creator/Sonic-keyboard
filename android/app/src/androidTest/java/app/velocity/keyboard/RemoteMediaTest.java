@@ -66,6 +66,7 @@ public class RemoteMediaTest {
   @Test(timeout=90000) public void optedInSelectionSendsGifAndWebpAndHidesInPrivateFields()throws Exception{
     Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
     String component="app.velocity.keyboard/.VelocityInputMethodService",previous=shell("settings get secure default_input_method"),testPackage=InstrumentationRegistry.getInstrumentation().getContext().getPackageName();boolean incognito=KeyboardPreferences.flag(context,"incognito");
+    boolean consent=RemoteMedia.consented(context);RemoteMedia.consent(context,false);
     RemoteMedia.clear(context);
     // Deterministic transport fixtures; this proves URI delivery, not live CDN availability.
     for(MediaRepository.Item item:RemoteMedia.list(context)){byte[] bytes=fixture(context,item.mime);RemoteMedia.obtain(context,item,()->true,(entry,active)->bytes);}
@@ -73,15 +74,17 @@ public class RemoteMediaTest {
       KeyboardPreferences.get(context).edit().putBoolean("incognito",false).commit();shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
       shell("am start -W -n "+testPackage+"/app.velocity.keyboard.InputProbeActivity -f 0x10008000 --ez rich true");wait(device,By.desc("external-probe-text")).click();wait(device,By.desc("Emojis o letras")).click();wait(device,By.text("GIFs")).click();
       assertFalse(device.hasObject(By.desc("Enviar gif: Wendy · impactada")));
+      assertFalse(device.hasObject(By.text("Ver fuente")));assertFalse(device.hasObject(By.text("Abrir página de GIPHY · famosos")));
+      wait(device,By.text("Créditos")).click();wait(device,By.text("Cerrar")).click();assertTrue(device.hasObject(By.desc("external-probe-text")));
       wait(device,By.text("Cargar selección en línea")).click();
       UiObject2 gif=wait(device,By.desc("Enviar gif: Wendy · impactada"));assertTrue(device.wait(Until.hasObject(By.desc("Enviar gif: Wendy · impactada").enabled(true)),10000));gif.click();
       assertTrue(device.wait(Until.hasObject(By.text("recibido:image/gif").desc("external-probe-text")),5000));
-      if(!device.hasObject(By.text("Stickers")))wait(device,By.desc("Emojis o letras")).click();wait(device,By.text("Stickers")).click();wait(device,By.text("Cargar selección en línea")).click();
+      if(!device.hasObject(By.text("Stickers")))wait(device,By.desc("Emojis o letras")).click();wait(device,By.text("Stickers")).click();assertFalse(device.hasObject(By.text("Cargar selección en línea")));
       UiObject2 sticker=wait(device,By.desc("Enviar sticker: Los mejores Stickers · 1"));assertTrue(device.wait(Until.hasObject(By.desc("Enviar sticker: Los mejores Stickers · 1").enabled(true)),10000));sticker.click();
       assertTrue(device.wait(Until.hasObject(By.text("recibido:image/webp").desc("external-probe-text")),5000));
       device.pressBack();wait(device,By.desc("external-probe-password")).click();assertFalse(device.hasObject(By.text("Cargar selección en línea")));
     }finally{
-      KeyboardPreferences.get(context).edit().putBoolean("incognito",incognito).commit();RemoteMedia.clear(context);if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
+      KeyboardPreferences.get(context).edit().putBoolean("incognito",incognito).commit();RemoteMedia.consent(context,consent);RemoteMedia.clear(context);if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
     }
   }
 }

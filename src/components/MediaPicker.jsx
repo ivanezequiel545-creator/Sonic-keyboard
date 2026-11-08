@@ -33,6 +33,6 @@ export default function MediaPicker({ kind, incognito = false }) {
       </button>)}</div>
     {selected && <div className="media-actions"><a download={selected.file} href={`/media/${selected.file}`}>Descargar {selected.kind === "gif" ? "GIF" : "sticker"}</a><button type="button" onClick={share}>Compartir archivo</button></div>}
     <p role="status">{status}</p>
-    <small>La selección remota se carga solo al pedirlo; no se envían tus palabras. Los stickers se comparten como imágenes; cada app decide cómo mostrarlos.</small>
+    <small>La selección remota requiere tu autorización; después se muestra al abrir estas pestañas hasta que la desactives. No se envían tus palabras. Los stickers se comparten como imágenes; cada app decide cómo mostrarlos.</small>
   </div>;
 }
