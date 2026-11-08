@@ -79,7 +79,7 @@ jobs:
           arch: x86_64
           target: default
           disable-animations: true
-          script: cd android && bash ../scripts/gradle-ci.sh connectedImePreviewDebugAndroidTest --no-daemon -PvelocityBuildNumber="$GITHUB_RUN_NUMBER"
+          script: bash scripts/test-android-ci.sh
       - name: Prepare APKs and checksums
         run: |
           for entry in '1 webPreview' '2 personalPreview' '3 imePreview'; do

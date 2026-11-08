@@ -28,14 +28,15 @@ public class NativeKeyboardTest {
             return bytes.toString("UTF-8").trim();
         }
     }
-    @Test public void serviceUsesAndroidInputMethodPermission() throws Exception {
+    @Test(timeout = 30000) public void serviceUsesAndroidInputMethodPermission() throws Exception {
         Context target = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        assertEquals("app.velocity.keyboard",target.getPackageName());
         ServiceInfo service = target.getPackageManager().getServiceInfo(new ComponentName(target,VelocityInputMethodService.class),PackageManager.GET_META_DATA | PackageManager.MATCH_DISABLED_COMPONENTS);
         assertEquals("android.permission.BIND_INPUT_METHOD",service.permission);
         assertTrue(service.exported);
         assertEquals(BuildConfig.PREVIEW_STAGE >= 3,service.enabled);
     }
-    @Test public void typesAndDeletesInAnotherAppAndAdaptsToNumericAndPasswordFields() throws Exception {
+    @Test(timeout = 90000) public void typesAndDeletesInAnotherAppAndAdaptsToNumericAndPasswordFields() throws Exception {
         assertTrue(BuildConfig.PREVIEW_STAGE >= 3);
         UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         String component = "app.velocity.keyboard/.VelocityInputMethodService";
