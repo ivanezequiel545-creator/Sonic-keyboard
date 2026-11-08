@@ -145,7 +145,8 @@ public class NativeKeyboardTest {
 
       field = device.findObject(By.desc("external-probe-text"));
       field.click();
-      field.setText("abcdef");
+      assertTrue(device.wait(Until.hasObject(By.desc("Espacio")), 5000));
+      device.wait(Until.findObject(By.desc("external-probe-text")), 5000).setText("abcdef");
       device.findObject(By.desc("Herramientas de edición")).click();
       device.findObject(By.text("Fin")).click();
       device.findObject(By.text("ABC · Volver")).click();
@@ -158,10 +159,10 @@ public class NativeKeyboardTest {
         area.centerY(),
         20
       );
-      assertEquals("abcdef", field.getText());
+      assertEquals("abcdef", device.findObject(By.desc("external-probe-text")).getText());
       device.findObject(By.text("l")).click();
-      assertEquals(7, field.getText().length());
-      assertNotEquals("abcdefl", field.getText());
+      assertEquals(7, device.findObject(By.desc("external-probe-text")).getText().length());
+      assertNotEquals("abcdefl", device.findObject(By.desc("external-probe-text")).getText());
       device.findObject(By.desc("Herramientas de edición")).click();
       device.findObject(By.text("Fin")).click();
       device.findObject(By.text("ABC · Volver")).click();
