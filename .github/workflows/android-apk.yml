@@ -1,4 +1,4 @@
-name: Android · Velocity 1.0.0
+name: Android · Velocity 1.0.1
 
 on:
   push:
@@ -15,7 +15,7 @@ on:
         type: string
         default: ""
       publish:
-        description: Publicar 1.0.0 estable (requiere firma de producción y prueba física confirmada)
+        description: Publicar 1.0.1 estable (requiere firma de producción y prueba física confirmada)
         type: boolean
         default: false
 
@@ -80,7 +80,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Web interface, release links and offline downloads
         run: TEST_OFFLINE=1 npm run test:e2e
-      - name: Compile 1.0.0 verification APK, unit tests and lint
+      - name: Compile 1.0.1 verification APK, unit tests and lint
         working-directory: android
         run: |
           chmod +x gradlew
@@ -115,14 +115,14 @@ jobs:
       - name: Prepare APKs and checksums
         run: |
           mkdir -p apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.0-verification.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/velocity-1.0.1-verification.apk
           if test -f android/app/build/outputs/apk/release/app-release.apk; then
-            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.0.apk
+            cp android/app/build/outputs/apk/release/app-release.apk apk/velocity-1.0.1.apk
           fi
           (cd apk && for file in *.apk; do sha256sum "$file" > "$file.sha256"; done)
       - uses: actions/upload-artifact@v4
         with:
-          name: velocity-1.0.0-apk
+          name: velocity-1.0.1-apk
           path: apk/
           retention-days: 30
       - uses: actions/upload-artifact@v4
@@ -133,14 +133,14 @@ jobs:
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
           retention-days: 14
-      - name: Publish signed stable 1.0.0
+      - name: Publish signed stable 1.0.1
         if: github.event_name == 'workflow_dispatch' && inputs.publish && inputs.device_verified && steps.signing.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          test -s apk/velocity-1.0.0.apk
-          gh release create v1.0.0 --target "$GITHUB_SHA" --title 'Velocity 1.0.0' --notes-file docs/releases/1.0.0.md apk/velocity-1.0.0.apk apk/velocity-1.0.0.apk.sha256
+          test -s apk/velocity-1.0.1.apk
+          gh release create v1.0.1 --target "$GITHUB_SHA" --title 'Velocity 1.0.1' --notes-file docs/releases/1.0.1.md apk/velocity-1.0.1.apk apk/velocity-1.0.1.apk.sha256
       - name: Remove private signing material
         if: always()
         run: rm -f "${VELOCITY_KEYSTORE_PATH:-$RUNNER_TEMP/velocity.keystore}"

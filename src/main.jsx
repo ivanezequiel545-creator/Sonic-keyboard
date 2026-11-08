@@ -58,6 +58,7 @@ import {
   readableInk,
 } from "./preferences.js";
 import EmojiPicker from "./components/EmojiPicker.jsx";
+import { currentSpanishWord, loadSpanishWords, spanishCompletions } from "./spanish-suggestions.js";
 import CustomizationPanel from "./components/CustomizationPanel.jsx";
 import "./styles.css";
 
@@ -98,6 +99,10 @@ function App() {
     DEFAULT_SETTINGS,
   );
   const [background, setBackground] = useStored("velocity-background", "");
+  const [spanishWords,setSpanishWords]=useState([]);
+  const [textCursor,setTextCursor]=useState(0);
+  useEffect(()=>{let alive=true;if(settings.suggestions&&!settings.incognito)loadSpanishWords().then(words=>{if(alive)setSpanishWords(words);}).catch(()=>{});return()=>{alive=false;};},[settings.suggestions,settings.incognito]);
+
 
   const [history, setHistory] = useStored("velocity-downloads", []);
   const [notes, setNotes] = useStored("velocity-notes", []);
@@ -228,6 +233,7 @@ function App() {
         : start;
     const next = text.slice(0, before) + value + text.slice(end);
     setText(next);
+    setTextCursor(before + value.length);
     requestAnimationFrame(() => {
       el?.focus();
       el?.setSelectionRange(before + value.length, before + value.length);
@@ -235,10 +241,12 @@ function App() {
     if (shift && value.trim()) setShift(false);
   }
   function suggest(word) {
-    const next = text.replace(/[^\s]*$/, word + " ");
-    setText(next);
-    textarea.current?.focus();
+    const el=textarea.current;const position=el?.selectionStart??textCursor;const end=el?.selectionEnd??position;
+    if(position!==end)return;const current=currentSpanishWord(text.slice(0,position));const start=position-current.length;
+    setText(text.slice(0,start)+word+" "+text.slice(end));setTextCursor(start+word.length+1);
+    requestAnimationFrame(()=>{el?.focus();el?.setSelectionRange(start+word.length+1,start+word.length+1);});
   }
+
   async function copy(value) {
     if (!value) return notify("Primero escribe algo para copiar.");
     try {
@@ -570,14 +578,7 @@ function App() {
           ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"],
           ["z", "x", "c", "v", "b", "n", "m"],
         ];
-    const lastWord = text.trim().split(/\s+/).at(-1)?.toLowerCase() || "";
-    const suggestions = lastWord.startsWith("gr")
-      ? ["gracias", "genial", "grande"]
-      : lastWord.startsWith("h")
-        ? ["hola", "hoy", "hasta"]
-        : lastWord.startsWith("b")
-          ? ["bien", "buenos", "bonito"]
-          : ["hola", "¡Hola!", "gracias"];
+    const suggestions=spanishCompletions(spanishWords,currentSpanishWord(text.slice(0,textCursor)));
     return (
       <section className="playground card" id="playground">
         <div className="section-card-heading">
@@ -596,7 +597,8 @@ function App() {
             inputMode="none"
             placeholder="Escribe algo increíble…"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {setText(e.target.value);setTextCursor(e.target.selectionStart);}}
+            onSelect={(e)=>setTextCursor(e.target.selectionStart)}
             style={{ fontSize: settings.fontSize === "large" ? 20 : 16 }}
           />
           <div className="message-actions">
@@ -685,7 +687,7 @@ function App() {
                 <Languages size={16} />
               </button>
               <div className="suggestions">
-                {settings.suggestions ? (
+                {settings.suggestions && !settings.incognito ? (
                   suggestions.map((s) => (
                     <button key={s} onClick={() => suggest(s)}>
                       {s}
@@ -912,7 +914,7 @@ function App() {
           </button>
           <div className="sidebar-footer">
             <span className="status-dot" /> Hecho para ser libre.
-            <span>v1.0.0</span>
+            <span>v1.0.1</span>
           </div>
         </div>
       </aside>
@@ -1056,7 +1058,7 @@ function App() {
                 </div>
               </section>
               <div className="comfort-announcement">
-                <span>✦ NUEVO · VELOCITY 1.0.0</span>
+                <span>✦ NUEVO · VELOCITY 1.0.1</span>
                 <div>
                   <strong>Un teclado que se siente mejor.</strong>
                   <p>
@@ -1186,7 +1188,7 @@ function App() {
           {page === "customize" && (
             <>
               <PageHeading
-                eyebrow="VELOCITY 1.0.0 · HECHO PARA TUS MANOS"
+                eyebrow="VELOCITY 1.0.1 · HECHO PARA TUS MANOS"
                 title="Cada detalle. A tu manera."
                 text="Más comodidad, menos esfuerzo. Diseña tu teclado y pruébalo al instante."
               />
@@ -1538,7 +1540,7 @@ function App() {
                   </SettingRow>
                   <SettingRow
                     title="Sugerencias rápidas"
-                    text="Frases locales sencillas, sin enviar tu texto."
+                    text="Completa palabras del diccionario español local, sin enviar tu texto."
                   >
                     <Toggle
                       label="Sugerencias rápidas"

@@ -3,6 +3,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   sound: false,
   haptics: true,
   suggestions: true,
+  autocorrect: true,
   fontSize: "normal",
   keyHeight: 56,
   keyGap: 3,

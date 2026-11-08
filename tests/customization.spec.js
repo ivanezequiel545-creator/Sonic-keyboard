@@ -158,3 +158,12 @@ test("emoji catalogue is available offline even if never opened while online", a
   ).toBeVisible();
   await context.setOffline(false);
 });
+
+test("Spanish suggestion strip completes the word at the caret and respects private mode",async({page})=>{
+ await customize(page);const input=page.getByRole('textbox',{name:'Prueba el teclado'});
+ await input.fill('hol');await expect(page.locator('.suggestions').getByRole('button',{name:'hola',exact:true})).toBeVisible();
+ await page.locator('.suggestions').getByRole('button',{name:'hola',exact:true}).click();await expect(input).toHaveValue('hola ');
+ await input.fill('hol mundo');await input.evaluate(el=>{el.focus();el.setSelectionRange(3,3);el.dispatchEvent(new Event('select',{bubbles:true}));});
+ await page.locator('.suggestions').getByRole('button',{name:'hola',exact:true}).click();await expect(input).toHaveValue('hola  mundo');
+ await page.getByRole('checkbox',{name:'Modo privado · sin recientes',exact:true}).check();await expect(page.locator('.suggestions button')).toHaveCount(0);
+});

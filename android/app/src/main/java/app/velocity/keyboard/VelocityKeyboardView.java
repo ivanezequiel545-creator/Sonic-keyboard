@@ -23,6 +23,8 @@ public final class VelocityKeyboardView extends LinearLayout {
     void onSettings();
     void onHide();
 
+    default void onSuggestion(String word) {}
+
     default void onMoveCursor(int delta) {}
 
     default void onEdit(String action) {}
@@ -43,6 +45,13 @@ public final class VelocityKeyboardView extends LinearLayout {
   private long lastSpace;
   private LinearLayout panel;
   private TextView searchLabel;
+  private boolean predictionsAllowed;
+  private final List<Button> candidateButtons=new ArrayList<>();
+  private List<String> candidateWords=Collections.emptyList();
+  public void setPredictionsAllowed(boolean allowed){predictionsAllowed=allowed;}
+  public void updateCandidates(List<String> words){candidateWords=new ArrayList<>(words);paintCandidates();}
+  private void paintCandidates(){for(int i=0;i<candidateButtons.size();i++){Button button=candidateButtons.get(i);String word=i<candidateWords.size()?candidateWords.get(i):"";button.setText(word);button.setEnabled(!word.isEmpty());button.setContentDescription(word.isEmpty()?"Sugerencia vacía":"Usar sugerencia: "+word);button.setTypeface(null,i==1?Typeface.BOLD:Typeface.NORMAL);}}
+
 
   public VelocityKeyboardView(Context context, Listener listener) {
     super(context);
@@ -80,6 +89,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     handler.removeCallbacksAndMessages(null);
     shifted = capsLock = symbols = emojis = tools = searching = false;
     emojiQuery = "";
+    candidateWords=Collections.emptyList();paintCandidates();
     lastSpace = 0;
   }
 
@@ -487,6 +497,10 @@ public final class VelocityKeyboardView extends LinearLayout {
     button.setMinimumHeight(0);
     button.setPadding(0, 0, 0, 0);
     button.setIncludeFontPadding(false);
+    // OEM/service themes can default to TOP|START. Never inherit key alignment.
+    button.setGravity(Gravity.CENTER);
+    button.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+    button.setSingleLine(true);
     int alpha =
       (KeyboardPreferences.number(getContext(), "keyOpacity") * 255) / 100;
     int color = special ? 0xff20375d : (keyColor & 0x00ffffff) | (alpha << 24);
@@ -531,6 +545,7 @@ public final class VelocityKeyboardView extends LinearLayout {
   private Button sideButton() {
     Button button = new Button(getContext());
     button.setText("⇆");
+    button.setGravity(Gravity.CENTER);
     button.setTextColor(KeyboardPreferences.readable(background));
     button.setBackgroundColor(Color.TRANSPARENT);
     button.setContentDescription("Cambiar el lado del teclado");
@@ -552,34 +567,17 @@ public final class VelocityKeyboardView extends LinearLayout {
     LinearLayout bar = new LinearLayout(getContext());
     bar.setGravity(Gravity.CENTER_VERTICAL);
     panel.addView(bar, new LayoutParams(-1, dp(40)));
-    TextView title = new TextView(getContext());
-    title.setText(
-      sensitive
-        ? "Velocity · campo privado"
-        : privateMode()
-          ? "Velocity · privado"
-          : "⚡ Velocity"
-    );
-    title.setTextColor(KeyboardPreferences.readable(background));
-    title.setTextSize(11);
-    title.setPadding(dp(5), 0, 0, 0);
-    bar.addView(title, new LayoutParams(0, -2, 1));
-    tool(bar, "⋯", "Herramientas de edición", () -> {
-      tools = !tools;
-      emojis = searching = false;
-      refresh();
-    });
-    tool(bar, "1 mano", "Cambiar modo de una mano", () -> {
-      String hand = KeyboardPreferences.get(getContext()).getString(
-        "hand",
-        "full"
-      );
-      KeyboardPreferences.get(getContext())
-        .edit()
-        .putString("hand", "full".equals(hand) ? "right" : "full")
-        .apply();
-      refresh();
-    });
+    candidateButtons.clear();
+    boolean showCandidates=predictionsAllowed&&!privateMode()&&!numeric&&!symbols&&!emojis&&!tools&&!searching&&KeyboardPreferences.flag(getContext(),"suggestions");
+    if(showCandidates){
+      tool(bar,"⋯","Herramientas de edición",()->{tools=true;refresh();});
+      LinearLayout candidates=new LinearLayout(getContext());candidates.setContentDescription("Sugerencias en español");bar.addView(candidates,new LayoutParams(0,-1,1));
+      for(int i=0;i<3;i++){final int index=i;Button button=new Button(getContext());button.setAllCaps(false);button.setTextSize(14);button.setTextColor(KeyboardPreferences.readable(background));button.setBackgroundColor(Color.TRANSPARENT);button.setPadding(dp(2),0,dp(2),0);button.setMinWidth(0);button.setMinimumWidth(0);button.setMinHeight(0);button.setMinimumHeight(0);button.setGravity(Gravity.CENTER);button.setSingleLine(true);button.setEllipsize(android.text.TextUtils.TruncateAt.END);button.setFocusable(false);button.setOnClickListener(v->{if(index<candidateWords.size())listener.onSuggestion(candidateWords.get(index));});candidateButtons.add(button);candidates.addView(button,new LayoutParams(0,-1,1));}paintCandidates();
+    }else{
+      TextView title=new TextView(getContext());title.setText(sensitive?"Velocity · campo privado":privateMode()?"Velocity · privado":"⚡ Velocity");title.setTextColor(KeyboardPreferences.readable(background));title.setTextSize(11);title.setPadding(dp(5),0,0,0);bar.addView(title,new LayoutParams(0,-2,1));
+      tool(bar,"⋯","Herramientas de edición",()->{tools=!tools;emojis=searching=false;refresh();});
+      tool(bar,"1 mano","Cambiar modo de una mano",this::toggleHand);
+    }
     tool(bar, "◎", "Elegir otro teclado", listener::onSwitchKeyboard);
     tool(bar, "⚙", "Ajustes de Velocity", listener::onSettings);
     tool(bar, "⌄", "Ocultar teclado", listener::onHide);
@@ -595,6 +593,7 @@ public final class VelocityKeyboardView extends LinearLayout {
     button.setAllCaps(false);
     button.setText(text);
     button.setTextSize(11);
+    button.setGravity(Gravity.CENTER);
     button.setTextColor(KeyboardPreferences.readable(background));
     button.setBackgroundColor(Color.TRANSPARENT);
     button.setPadding(0, 0, 0, 0);
@@ -606,7 +605,10 @@ public final class VelocityKeyboardView extends LinearLayout {
     row.addView(button, new LayoutParams(dp(text.length() > 2 ? 44 : 32), -1));
   }
 
+  private void toggleHand(){String hand=KeyboardPreferences.get(getContext()).getString("hand","full");KeyboardPreferences.get(getContext()).edit().putString("hand","full".equals(hand)?"right":"full").apply();refresh();}
   private void editorTools() {
+    LinearLayout hand=row(true);key(hand,"1 mano",this::toggleHand,1,true).setContentDescription("Cambiar modo de una mano");
+
     LinearLayout move = row(false);
     key(
       move,

@@ -63,6 +63,8 @@ public final class KeyboardPreferences {
   public static final String[] BOOLEAN_KEYS = {
     "sound",
     "haptics",
+    "suggestions",
+    "autocorrect",
     "numberRow",
     "customColors",
     "rememberEmojis",
@@ -105,6 +107,7 @@ public final class KeyboardPreferences {
     return get(c).getBoolean(
       key,
       "haptics".equals(key) ||
+        "suggestions".equals(key) || "autocorrect".equals(key) ||
         "numberRow".equals(key) ||
         "rememberEmojis".equals(key)
     );

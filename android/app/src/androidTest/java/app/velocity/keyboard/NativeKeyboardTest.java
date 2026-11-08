@@ -71,7 +71,7 @@ public class NativeKeyboardTest {
       shell(
         "am start -W -n " +
           testPackage +
-          "/app.velocity.keyboard.InputProbeActivity"
+          "/app.velocity.keyboard.InputProbeActivity -f 0x10008000"
       );
       UiObject2 field = device.wait(
         Until.findObject(By.desc("external-probe-text")),
@@ -273,6 +273,42 @@ public class NativeKeyboardTest {
     }
   }
 
+  @Test(timeout=90000)
+  public void spanishSuggestionsCompleteCorrectUndoAndRespectProtectedFields() throws Exception {
+    Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+    boolean suggestions=KeyboardPreferences.flag(context,"suggestions"),autocorrect=KeyboardPreferences.flag(context,"autocorrect"),incognito=KeyboardPreferences.flag(context,"incognito");
+    UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+    String previous=shell("settings get secure default_input_method");String component="app.velocity.keyboard/.VelocityInputMethodService";
+    String testPackage=InstrumentationRegistry.getInstrumentation().getContext().getPackageName();
+    try{
+      KeyboardPreferences.get(context).edit().putBoolean("suggestions",true).putBoolean("autocorrect",true).putBoolean("incognito",false).commit();
+      shell("settings put secure show_ime_with_hard_keyboard 1");shell("ime enable "+component);shell("ime set "+component);
+      shell("am start -W -n "+testPackage+"/app.velocity.keyboard.InputProbeActivity -f 0x10008000 --ez suggestions true");
+      device.wait(Until.findObject(By.desc("external-probe-text")),10000).click();
+      assertTrue(device.wait(Until.hasObject(By.desc("Sugerencias en español")),10000));
+      device.findObject(By.desc("external-probe-text")).setText("holaa");
+      device.wait(Until.findObject(By.desc("Usar sugerencia: hola")),10000).click();
+      assertTrue(device.wait(Until.hasObject(By.text("hola ").desc("external-probe-text")),5000));
+      device.findObject(By.desc("external-probe-text")).setText("grasias");
+      assertTrue(device.wait(Until.hasObject(By.desc("Usar sugerencia: gracias")),5000));
+      device.findObject(By.desc("Espacio")).click();
+      assertTrue(device.wait(Until.hasObject(By.text("gracias ").desc("external-probe-text")),5000));
+      device.findObject(By.desc("Borrar carácter")).click();
+      assertTrue(device.wait(Until.hasObject(By.text("grasias").desc("external-probe-text")),5000));
+      KeyboardPreferences.get(context).edit().putBoolean("autocorrect",false).commit();
+      device.findObject(By.desc("external-probe-text")).setText("holaa");
+      assertTrue(device.wait(Until.hasObject(By.desc("Usar sugerencia: hola")),5000));
+      device.findObject(By.desc("Espacio")).click();
+      assertTrue(device.wait(Until.hasObject(By.text("holaa ").desc("external-probe-text")),5000));
+      device.findObject(By.desc("external-probe-number")).click();
+      assertTrue(device.wait(Until.hasObject(By.text("1")),5000));assertFalse(device.hasObject(By.desc("Sugerencias en español")));
+      device.findObject(By.desc("external-probe-password")).click();assertTrue(device.wait(Until.hasObject(By.text("Velocity · campo privado")),5000));assertFalse(device.hasObject(By.desc("Sugerencias en español")));
+    }finally{
+      KeyboardPreferences.get(context).edit().putBoolean("suggestions",suggestions).putBoolean("autocorrect",autocorrect).putBoolean("incognito",incognito).commit();
+      if(previous.contains("/"))shell("ime set "+previous);shell("ime disable "+component);device.pressHome();
+    }
+  }
+
   private android.widget.Button findButton(
     android.view.View view,
     String text
@@ -320,6 +356,10 @@ public class NativeKeyboardTest {
       );
       android.widget.Button q = findButton(view, "q");
       assertNotNull(q);
+      assertEquals(android.view.Gravity.CENTER,q.getGravity());
+      assertEquals(android.view.View.TEXT_ALIGNMENT_CENTER,q.getTextAlignment());
+      assertEquals(android.view.Gravity.CENTER,findButton(view,"1").getGravity());
+      assertEquals(android.view.Gravity.CENTER,findButton(view,"⌫").getGravity());
       android.view.View holder = view.getChildAt(0);
       q.performClick();
       q.performClick();

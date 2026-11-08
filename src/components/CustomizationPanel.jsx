@@ -168,6 +168,8 @@ export default function CustomizationPanel({
       </div>
       <div className="customizer-toggles">
         {[
+          ["suggestions", "Sugerencias locales en español"],
+          ["autocorrect", "Corregir errores comunes (Android)"],
           ["numberRow", "Fila de números permanente"],
           ["rememberEmojis", "Recordar emojis recientes"],
           ["incognito", "Modo privado · sin recientes"],

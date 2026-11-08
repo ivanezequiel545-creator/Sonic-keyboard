@@ -15,6 +15,8 @@ export default defineConfig({
           "/icon-192.png",
           "/icon-512.png",
           "/data/emojis-es.json",
+          "/data/es-words.json",
+          "/licenses/spanish-words.txt",
           "/licenses/emojibase.txt",
           ...Object.keys(bundle).map((name) => `/${name}`),
         ];

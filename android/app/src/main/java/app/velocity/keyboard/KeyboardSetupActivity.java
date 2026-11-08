@@ -48,7 +48,7 @@ public final class KeyboardSetupActivity extends Activity {
       );
       return insets;
     });
-    text("VELOCITY · 1.0.0", 12, 0xff6f8553);
+    text("VELOCITY · 1.0.1", 12, 0xff6f8553);
     text("Cómodo. A tu manera.", 28, 0xff20252d);
     text(
       "Ajustes locales del teclado nativo. No guarda ni envía tus pulsaciones.",
@@ -176,6 +176,9 @@ public final class KeyboardSetupActivity extends Activity {
           .putString("hand", hands[index])
           .apply()
     );
+    toggle("Sugerencias en español (locales)", "suggestions");
+    toggle("Corregir errores comunes al pulsar espacio", "autocorrect");
+    text("La barra superior propone palabras del diccionario local. Toca una sugerencia para completar. La corrección automática es conservadora; pulsa ⌫ inmediatamente después para deshacerla. No aprende ni guarda tus palabras. Se desactiva en privado, contraseñas, números y campos que impidan sugerencias.",12,0xff697b94);
     toggle("Fila numérica permanente", "numberRow");
     toggle("Sonido al escribir", "sound");
     toggle("Vibración del sistema", "haptics");
@@ -252,7 +255,7 @@ public final class KeyboardSetupActivity extends Activity {
     text(
       "Versión instalada: " +
         BuildConfig.VERSION_NAME +
-        ". La compatibilidad depende de cada aplicación y dispositivo. Sin predicción aprendida, dictado nativo ni gestos para formar palabras. El traductor y las notas siguen en la app. No funciona como teclado de iOS ni en pantallas del sistema que impidan teclados externos.",
+        ". La compatibilidad depende de cada aplicación y dispositivo. Con sugerencias locales y corrección básica; sin predicción aprendida ni dictado nativo ni gestos para formar palabras. El traductor y las notas siguen en la app. No funciona como teclado de iOS ni en pantallas del sistema que impidan teclados externos.",
       12,
       0xff697b94
     );
