@@ -164,6 +164,7 @@ test("Spanish suggestion strip completes the word at the caret and respects priv
  await input.fill('hol');await expect(page.locator('.suggestions').getByRole('button',{name:'hola',exact:true})).toBeVisible();
  await page.locator('.suggestions').getByRole('button',{name:'hola',exact:true}).click();await expect(input).toHaveValue('hola ');
  await input.fill('hol mundo');await input.press('Home');await input.press('ArrowRight');await input.press('ArrowRight');await input.press('ArrowRight');
+ await expect(input).toHaveValue('hol mundo');await expect.poll(()=>input.evaluate(el=>el.selectionStart)).toBe(3);await expect(page.locator('.suggestions').getByRole('button',{name:'hol',exact:true})).toBeVisible();
  await page.locator('.suggestions').getByRole('button',{name:'hola',exact:true}).click();await expect(input).toHaveValue('hola mundo');
  await page.getByRole('checkbox',{name:'Modo privado · sin recientes',exact:true}).check();await expect(page.locator('.suggestions button')).toHaveCount(0);
 });

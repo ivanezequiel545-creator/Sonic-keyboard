@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownToLine,
@@ -132,6 +132,22 @@ function App() {
     () => !!(window.SpeechRecognition || window.webkitSpeechRecognition),
   );
   const textarea = useRef(null);
+  const pendingSelection = useRef(null);
+  // Apply caret movement with the controlled DOM commit, never in an old RAF
+  // that can race the user's next physical key or selection change.
+  useLayoutEffect(() => {
+    const pending=pendingSelection.current;
+    if(!pending)return;
+    pendingSelection.current=null;
+    const el=textarea.current;
+    if(el&&el.value===pending.value){el.focus();el.setSelectionRange(pending.position,pending.position);}
+  },[text,textCursor]);
+  function setDraft(value,position){
+    pendingSelection.current={value,position};setText(value);setTextCursor(position);
+    const el=textarea.current;
+    if(el&&el.value===value){pendingSelection.current=null;el.focus();el.setSelectionRange(position,position);}
+  }
+
   const recognition = useRef(null);
   const audioRef = useRef(null);
   const notify = (message) => setToast(message);
@@ -225,27 +241,20 @@ function App() {
   function insert(value, remove = false) {
     keyFeedback();
     const el = textarea.current;
-    const start = el?.selectionStart ?? text.length;
-    const end = el?.selectionEnd ?? text.length;
-    const before =
-      remove && start === end
-        ? Math.max(0, start - previousGraphemeLength(text.slice(0, start)))
-        : start;
-    const next = text.slice(0, before) + value + text.slice(end);
-    setText(next);
-    setTextCursor(before + value.length);
-    requestAnimationFrame(() => {
-      el?.focus();
-      el?.setSelectionRange(before + value.length, before + value.length);
-    });
+    const current=el?.value??text;
+    const start=el?.selectionStart??current.length;
+    const end=el?.selectionEnd??current.length;
+    const before=remove&&start===end?Math.max(0,start-previousGraphemeLength(current.slice(0,start))):start;
+    setDraft(current.slice(0,before)+value+current.slice(end),before+value.length);
     if (shift && value.trim()) setShift(false);
   }
-  function suggest(word) {
-    const el=textarea.current;const position=el?.selectionStart??textCursor;const end=el?.selectionEnd??position;
-    if(position!==end)return;const current=currentSpanishWord(text.slice(0,position));const start=position-current.length;
-    const separator=text[end] === " " ? "" : " ";
-    setText(text.slice(0,start)+word+separator+text.slice(end));setTextCursor(start+word.length+1);
-    requestAnimationFrame(()=>{el?.focus();el?.setSelectionRange(start+word.length+1,start+word.length+1);});
+  function suggest(word,sourceWord) {
+    const el=textarea.current;const current=el?.value??text;
+    const position=el?.selectionStart??textCursor;const end=el?.selectionEnd??position;
+    const token=currentSpanishWord(current.slice(0,position));
+    if(position!==end||token!==sourceWord)return;
+    const start=position-token.length;const separator=current[end]===" "?"":" ";
+    setDraft(current.slice(0,start)+word+separator+current.slice(end),start+word.length+1);
   }
 
   async function copy(value) {
@@ -579,7 +588,8 @@ function App() {
           ["a", "s", "d", "f", "g", "h", "j", "k", "l", "ñ"],
           ["z", "x", "c", "v", "b", "n", "m"],
         ];
-    const suggestions=spanishCompletions(spanishWords,currentSpanishWord(text.slice(0,textCursor)));
+    const suggestionSource=currentSpanishWord(text.slice(0,textCursor));
+    const suggestions=spanishCompletions(spanishWords,suggestionSource);
     return (
       <section className="playground card" id="playground">
         <div className="section-card-heading">
@@ -598,8 +608,8 @@ function App() {
             inputMode="none"
             placeholder="Escribe algo increíble…"
             value={text}
-            onChange={(e) => {setText(e.target.value);setTextCursor(e.target.selectionStart);}}
-            onSelect={(e)=>setTextCursor(e.target.selectionStart)}
+            onChange={(e) => {pendingSelection.current=null;setText(e.target.value);setTextCursor(e.target.selectionStart);}}
+            onSelect={(e)=>{if(e.target.value===text)setTextCursor(e.target.selectionStart);}}
             style={{ fontSize: settings.fontSize === "large" ? 20 : 16 }}
           />
           <div className="message-actions">
@@ -690,7 +700,7 @@ function App() {
               <div className="suggestions">
                 {settings.suggestions && !settings.incognito ? (
                   suggestions.map((s) => (
-                    <button key={s} onClick={() => suggest(s)}>
+                    <button key={s} onPointerDown={e=>e.preventDefault()} onClick={() => suggest(s,suggestionSource)}>
                       {s}
                     </button>
                   ))
