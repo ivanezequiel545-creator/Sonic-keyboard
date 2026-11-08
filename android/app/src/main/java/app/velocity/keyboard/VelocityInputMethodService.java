@@ -49,7 +49,7 @@ public final class VelocityInputMethodService
     if(!canSuggest()||!lastCandidates.contains(word))return;InputConnection connection=getCurrentInputConnection();if(connection==null)return;
     CharSequence selected=connection.getSelectedText(0);String current=SpanishSuggestions.currentWord(connection.getTextBeforeCursor(80,0));
     if(!current.equals(candidateWord)||(selected!=null&&selected.length()>0)||SpanishSuggestions.wordContinues(connection.getTextAfterCursor(1,0)))return;
-    clearUndo();connection.beginBatchEdit();try{if(current.length()>0&&!connection.deleteSurroundingText(current.length(),0))return;connection.commitText(word+" ",1);}finally{connection.endBatchEdit();}requestSuggestions();
+    clearUndo();connection.beginBatchEdit();try{if(current.length()>0&&!connection.deleteSurroundingText(current.length(),0))return;CharSequence after=connection.getTextAfterCursor(1,0);boolean hasSpace=after!=null&&after.length()>0&&after.charAt(0)==' ';connection.commitText(word+(hasSpace?"":" "),hasSpace?2:1);}finally{connection.endBatchEdit();}requestSuggestions();
   }
 
 

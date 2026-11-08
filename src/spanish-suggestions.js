@@ -7,7 +7,7 @@ export function foldSpanish(word){return word.toLocaleLowerCase('es').replace(/[
 export function matchSpanishCase(word,typed){if(typed.length>1&&typed===typed.toLocaleUpperCase('es'))return word.toLocaleUpperCase('es');return /^[A-ZÁÉÍÓÚÜÑ]/.test(typed)?word[0].toLocaleUpperCase('es')+word.slice(1):word;}
 export function spanishCompletions(words,typed){
  if(!typed)return ['hola','gracias','bien'];const result=new Set([typed]);const prefix=foldSpanish(typed);
- for(const [word] of words)if(foldSpanish(word).startsWith(prefix)){result.add(matchSpanishCase(word,typed));if(result.size()===3)break;}
+ for(const [word] of words)if(foldSpanish(word).startsWith(prefix)){result.add(matchSpanishCase(word,typed));if(result.size===3)break;}
  return [...result];
 }
 let cached;

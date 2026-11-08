@@ -243,7 +243,8 @@ function App() {
   function suggest(word) {
     const el=textarea.current;const position=el?.selectionStart??textCursor;const end=el?.selectionEnd??position;
     if(position!==end)return;const current=currentSpanishWord(text.slice(0,position));const start=position-current.length;
-    setText(text.slice(0,start)+word+" "+text.slice(end));setTextCursor(start+word.length+1);
+    const separator=text[end] === " " ? "" : " ";
+    setText(text.slice(0,start)+word+separator+text.slice(end));setTextCursor(start+word.length+1);
     requestAnimationFrame(()=>{el?.focus();el?.setSelectionRange(start+word.length+1,start+word.length+1);});
   }
 
