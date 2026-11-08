@@ -136,6 +136,7 @@ jobs:
                       print('::error title=Lint report::' + message)
           PYTHON
       - name: Summarize failed runner logs
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
