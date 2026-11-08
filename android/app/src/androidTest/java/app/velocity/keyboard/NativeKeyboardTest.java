@@ -116,7 +116,9 @@ public class NativeKeyboardTest {
         device.wait(Until.findObject(By.text(key)), 5000).click();
       assertTrue(device.hasObject(By.text("hol").desc("external-probe-text")));
       device.findObject(By.desc("Ver resultados de emojis")).click();
-      device.wait(Until.findObject(By.text("🐈")), 5000).click();
+      UiObject2 cat = device.wait(Until.findObject(By.text("🐈\uFE0F")), 5000);
+      assertNotNull("Spanish search must expose the fully qualified cat emoji", cat);
+      cat.click();
       device.findObject(By.desc("Emojis o letras")).click();
       device.findObject(By.desc("Borrar carácter")).click();
       assertTrue(
