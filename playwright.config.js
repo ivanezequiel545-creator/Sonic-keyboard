@@ -6,6 +6,13 @@ export default defineConfig({
   workers: 1,
   timeout: 30000,
   reporter: "list",
+  webServer: process.env.CI
+    ? {
+        command: "npm run preview -- --port 5173",
+        url: "http://localhost:5173",
+        reuseExistingServer: false,
+      }
+    : undefined,
   use: {
     baseURL: process.env.TEST_URL || "http://localhost:5173",
     headless: true,

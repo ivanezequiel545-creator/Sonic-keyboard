@@ -16,6 +16,34 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    buildFeatures { buildConfig true }
+    flavorDimensions "preview"
+    productFlavors {
+        webPreview {
+            dimension "preview"
+            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 1
+            versionName = "1.1.0-alpha.1"
+            buildConfigField "int", "PREVIEW_STAGE", "1"
+            resValue "bool", "velocity_ime_enabled", "false"
+            resValue "bool", "velocity_setup_enabled", "false"
+        }
+        personalPreview {
+            dimension "preview"
+            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 2
+            versionName = "1.1.0-alpha.2"
+            buildConfigField "int", "PREVIEW_STAGE", "2"
+            resValue "bool", "velocity_ime_enabled", "false"
+            resValue "bool", "velocity_setup_enabled", "true"
+        }
+        imePreview {
+            dimension "preview"
+            versionCode = 110000 + (project.findProperty("velocityBuildNumber") ?: "0").toInteger() * 3 + 3
+            versionName = "1.1.0-alpha.3"
+            buildConfigField "int", "PREVIEW_STAGE", "3"
+            resValue "bool", "velocity_ime_enabled", "true"
+            resValue "bool", "velocity_setup_enabled", "true"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -39,6 +67,7 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    androidTestImplementation "androidx.test.uiautomator:uiautomator:2.3.0"
     implementation project(':capacitor-cordova-android-plugins')
 }
 

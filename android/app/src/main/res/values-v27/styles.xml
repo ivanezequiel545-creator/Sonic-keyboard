@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- This attribute does not exist on Android 6–8.0. Keep it version-scoped. -->
+    <style name="VelocityNativeTheme" parent="VelocityNativeBase">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
