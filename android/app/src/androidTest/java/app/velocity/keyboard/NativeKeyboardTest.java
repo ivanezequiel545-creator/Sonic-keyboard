@@ -328,6 +328,7 @@ public class NativeKeyboardTest {
     long time=android.os.SystemClock.uptimeMillis();
     android.view.MotionEvent down=android.view.MotionEvent.obtain(time,time,android.view.MotionEvent.ACTION_DOWN,point.x,point.y,0);
     android.view.MotionEvent up=android.view.MotionEvent.obtain(time,time+40,android.view.MotionEvent.ACTION_UP,point.x,point.y,0);
+    down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
     try{assertTrue(automation.injectInputEvent(down,true));assertTrue(automation.injectInputEvent(up,true));}finally{down.recycle();up.recycle();}
     android.os.SystemClock.sleep(250);
   }
